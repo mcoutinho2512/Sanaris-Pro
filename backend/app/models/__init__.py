@@ -4,6 +4,7 @@ from app.models.medical_record import MedicalRecord, VitalSigns, MedicalRecordAt
 from app.models.prescription import Prescription, PrescriptionItem, PrescriptionTemplate
 from app.models.document import DocumentTemplate, PatientDocument, QuickPatientRegistration
 from app.models.medical_record_template import MedicalRecordTemplate, ExamResult, PhotoEvolution
+from app.models.cfm_integration import CFMCredentials, CFMPrescriptionLog
 
 __all__ = [
     "Patient",
@@ -21,5 +22,7 @@ __all__ = [
     "QuickPatientRegistration",
     "MedicalRecordTemplate",
     "ExamResult",
-    "PhotoEvolution"
+    "PhotoEvolution",
+    "CFMCredentials",
+    "CFMPrescriptionLog"
 ]

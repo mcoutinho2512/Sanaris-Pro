@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.endpoints import patients, appointments, medical_records, prescriptions, utils, documents, medical_record_extensions
+from app.api.endpoints import patients, appointments, medical_records, prescriptions, utils, documents, medical_record_extensions, cfm_integration
 
 app = FastAPI(
     title="Sanaris Pro API",
     description="Sistema de Gestão de Clínicas e Consultórios",
-    version="1.0.0 - Fase 2.7"
+    version="1.0.0 - Fase 2.8"
 )
 
 app.add_middleware(
@@ -27,11 +27,12 @@ app.include_router(prescriptions.router)
 app.include_router(utils.router)
 app.include_router(documents.router)
 app.include_router(medical_record_extensions.router)
+app.include_router(cfm_integration.router)
 
 @app.get("/")
 def read_root():
     return {
-        "message": "🏥 Sanaris Pro API - Fase 2.7 ✅",
+        "message": "🏥 Sanaris Pro API - Fase 2.8 ✅",
         "version": "1.0.0",
         "status": "online",
         "modules": {
@@ -44,7 +45,8 @@ def read_root():
             "prescriptions": "✅ Active (23 endpoints)",
             "utils": "✅ Active (6 endpoints)",
             "documents": "✅ Active (16 endpoints)",
-            "medical_extensions": "✅ Active (19 endpoints)"
+            "medical_extensions": "✅ Active (19 endpoints)",
+            "cfm_integration": "✅ Active (9 endpoints)"
         },
         "improvements": {
             "validators": "✅ CPF, CNPJ, Telefone, CEP, CRM",
@@ -56,7 +58,8 @@ def read_root():
             "specialty_templates": "✅ Templates por especialidade",
             "exam_charts": "✅ Gráficos de exames",
             "photo_evolution": "✅ Evolução fotográfica",
-            "prescription_sending": "✅ Envio de prescrições (Email/WhatsApp/SMS)"
+            "prescription_sending": "✅ Envio de prescrições (Email/WhatsApp/SMS)",
+            "cfm_integration": "✅ Integração CFM (prescricao.cfm.org.br)"
         }
     }
 
@@ -64,7 +67,7 @@ def read_root():
 def health_check():
     return {
         "status": "healthy",
-        "phase": "2.7",
+        "phase": "2.8",
         "features": [
             "appointments_crud",
             "confirmations",
@@ -90,6 +93,9 @@ def health_check():
             "exam_charts",
             "photo_evolution",
             "photo_comparison",
-            "prescription_sending"
+            "prescription_sending",
+            "cfm_authentication",
+            "cfm_prescription_send",
+            "cfm_sync"
         ]
     }
