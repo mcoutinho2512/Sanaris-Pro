@@ -5,7 +5,7 @@ from app.api.endpoints import patients, appointments, medical_records, prescript
 app = FastAPI(
     title="Sanaris Pro API",
     description="Sistema de Gestão de Clínicas e Consultórios",
-    version="1.0.0 - Fase 2.6"
+    version="1.0.0 - Fase 2.7"
 )
 
 app.add_middleware(
@@ -31,7 +31,7 @@ app.include_router(medical_record_extensions.router)
 @app.get("/")
 def read_root():
     return {
-        "message": "🏥 Sanaris Pro API - Fase 2.6 ✅",
+        "message": "🏥 Sanaris Pro API - Fase 2.7 ✅",
         "version": "1.0.0",
         "status": "online",
         "modules": {
@@ -41,7 +41,7 @@ def read_root():
             "schedules": "✅ Active", 
             "availability": "✅ Active",
             "medical_records": "✅ Active (17 endpoints)",
-            "prescriptions": "✅ Active (20 endpoints)",
+            "prescriptions": "✅ Active (23 endpoints)",
             "utils": "✅ Active (6 endpoints)",
             "documents": "✅ Active (16 endpoints)",
             "medical_extensions": "✅ Active (19 endpoints)"
@@ -55,7 +55,8 @@ def read_root():
             "quick_registration": "✅ Pré-cadastro rápido",
             "specialty_templates": "✅ Templates por especialidade",
             "exam_charts": "✅ Gráficos de exames",
-            "photo_evolution": "✅ Evolução fotográfica"
+            "photo_evolution": "✅ Evolução fotográfica",
+            "prescription_sending": "✅ Envio de prescrições (Email/WhatsApp/SMS)"
         }
     }
 
@@ -63,7 +64,7 @@ def read_root():
 def health_check():
     return {
         "status": "healthy",
-        "phase": "2.6",
+        "phase": "2.7",
         "features": [
             "appointments_crud",
             "confirmations",
@@ -88,6 +89,7 @@ def health_check():
             "exam_results",
             "exam_charts",
             "photo_evolution",
-            "photo_comparison"
+            "photo_comparison",
+            "prescription_sending"
         ]
     }

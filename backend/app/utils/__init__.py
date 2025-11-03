@@ -17,6 +17,7 @@ from app.utils.filters import (
     filter_by_professional,
     filter_by_patient
 )
+from app.utils.notifications import notification_service
 
 __all__ = [
     # Validators
@@ -37,5 +38,8 @@ __all__ = [
     "filter_by_search",
     "filter_by_status",
     "filter_by_professional",
-    "filter_by_patient"
+    "filter_by_patient",
+    
+    # Notifications
+    "notification_service"
 ]

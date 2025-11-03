@@ -157,6 +157,8 @@ class PrescriptionResponse(PrescriptionBase):
     professional_signature: Optional[str] = None
     
     is_dispensed: bool
+    is_sent: bool = False
+    sent_at: Optional[datetime] = None
     dispensed_at: Optional[datetime] = None
     pharmacy_name: Optional[str] = None
     pharmacist_name: Optional[str] = None
@@ -179,6 +181,8 @@ class PrescriptionListResponse(BaseModel):
     prescription_type: PrescriptionType
     is_signed: bool
     is_dispensed: bool
+    is_sent: bool = False
+    sent_at: Optional[datetime] = None
     items_count: int = 0
     
     class Config:
@@ -239,3 +243,33 @@ class PrescriptionTemplateResponse(PrescriptionTemplateBase):
     
     class Config:
         from_attributes = True
+
+
+# ============================================
+# SCHEMAS DE ENVIO
+# ============================================
+
+class PrescriptionSendEmail(BaseModel):
+    """Schema para envio por email"""
+    email: str = Field(..., pattern=r'^[\w\.-]+@[\w\.-]+\.\w+$')
+    message: Optional[str] = None
+
+
+class PrescriptionSendWhatsApp(BaseModel):
+    """Schema para envio por WhatsApp"""
+    phone: str = Field(..., min_length=10, max_length=11)
+    message: Optional[str] = None
+
+
+class PrescriptionSendSMS(BaseModel):
+    """Schema para envio por SMS"""
+    phone: str = Field(..., min_length=10, max_length=11)
+    message: Optional[str] = None
+
+
+class PrescriptionSendResponse(BaseModel):
+    """Schema de resposta de envio"""
+    success: bool
+    method: str  # email, whatsapp, sms
+    sent_at: datetime
+    message: str

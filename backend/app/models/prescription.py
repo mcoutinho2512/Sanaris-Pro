@@ -135,3 +135,7 @@ class PrescriptionTemplate(Base):
     
     def __repr__(self):
         return f"<PrescriptionTemplate {self.template_name}>"
+
+    # Envio
+    is_sent = Column(Boolean, default=False)
+    sent_at = Column(DateTime)

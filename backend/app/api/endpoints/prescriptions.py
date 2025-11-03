@@ -12,6 +12,7 @@ from app.core.database import get_db
 from app.models.prescription import Prescription, PrescriptionItem, PrescriptionTemplate
 from app.models.patient import Patient
 from app.schemas.prescription import (
+    PrescriptionSendEmail, PrescriptionSendWhatsApp, PrescriptionSendSMS,
     PrescriptionCreate, PrescriptionUpdate, PrescriptionResponse,
     PrescriptionListResponse, PrescriptionSign, PrescriptionDispense,
     PrescriptionItemCreate, PrescriptionItemUpdate, PrescriptionItemResponse,
@@ -689,5 +690,203 @@ def get_statistics(
         "pending_signature": total - signed,
         "signature_rate": round((signed / total * 100), 2) if total > 0 else 0,
         "prescriptions_by_type": {pt: count for pt, count in by_type}
+    }
+
+
+
+# ============================================
+# ENVIO DE PRESCRIÇÕES
+# ============================================
+
+@router.post("/{prescription_id}/send-email", response_model=dict)
+def send_prescription_by_email(
+    prescription_id: str,
+    send_data: PrescriptionSendEmail,
+    db: Session = Depends(get_db)
+):
+    """Envia prescrição por email"""
+    from app.utils.notifications import notification_service
+    
+    prescription = db.query(Prescription).filter(Prescription.id == prescription_id).first()
+    
+    if not prescription:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Prescrição não encontrada"
+        )
+    
+    if not prescription.is_signed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Apenas prescrições assinadas podem ser enviadas"
+        )
+    
+    # Buscar paciente
+    patient = db.query(Patient).filter(Patient.id == prescription.patient_id).first()
+    
+    # Montar mensagem
+    subject = f"Prescrição Médica - {patient.full_name}"
+    
+    if send_data.message:
+        body = send_data.message
+    else:
+        body = f"""
+        <html>
+        <body>
+            <h2>Prescrição Médica</h2>
+            <p>Prezado(a) {patient.full_name},</p>
+            <p>Segue em anexo sua prescrição médica.</p>
+            <p><strong>Data:</strong> {prescription.prescription_date.strftime('%d/%m/%Y')}</p>
+            <p><strong>Validade:</strong> {prescription.valid_until.strftime('%d/%m/%Y') if prescription.valid_until else 'N/A'}</p>
+            <br>
+            <p><strong>Medicamentos prescritos:</strong></p>
+            <ul>
+            {''.join([f'<li>{item.medication_name} - {item.dosage}</li>' for item in prescription.items])}
+            </ul>
+            <br>
+            <p>Atenciosamente,</p>
+            <p>Equipe Médica</p>
+        </body>
+        </html>
+        """
+    
+    # Enviar (em produção, gerar PDF da prescrição)
+    success = notification_service.send_email(
+        to_email=send_data.email,
+        subject=subject,
+        body=body,
+        html=True
+    )
+    
+    if success:
+        prescription.is_sent = True
+        prescription.sent_at = datetime.utcnow()
+        db.commit()
+    
+    return {
+        "success": success,
+        "method": "email",
+        "sent_to": send_data.email,
+        "sent_at": datetime.utcnow() if success else None,
+        "message": "Prescrição enviada com sucesso" if success else "Falha ao enviar prescrição"
+    }
+
+
+@router.post("/{prescription_id}/send-whatsapp", response_model=dict)
+def send_prescription_by_whatsapp(
+    prescription_id: str,
+    send_data: PrescriptionSendWhatsApp,
+    db: Session = Depends(get_db)
+):
+    """Envia prescrição por WhatsApp"""
+    from app.utils.notifications import notification_service
+    
+    prescription = db.query(Prescription).filter(Prescription.id == prescription_id).first()
+    
+    if not prescription:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Prescrição não encontrada"
+        )
+    
+    if not prescription.is_signed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Apenas prescrições assinadas podem ser enviadas"
+        )
+    
+    # Buscar paciente
+    patient = db.query(Patient).filter(Patient.id == prescription.patient_id).first()
+    
+    # Montar mensagem
+    if send_data.message:
+        message = send_data.message
+    else:
+        medications = "\n".join([f"• {item.medication_name} - {item.dosage}" for item in prescription.items])
+        message = f"""
+🏥 *Prescrição Médica*
+
+Olá {patient.full_name}!
+
+Sua prescrição médica está pronta.
+
+*Data:* {prescription.prescription_date.strftime('%d/%m/%Y')}
+*Validade:* {prescription.valid_until.strftime('%d/%m/%Y') if prescription.valid_until else 'N/A'}
+
+*Medicamentos:*
+{medications}
+
+Qualquer dúvida, entre em contato.
+        """
+    
+    # Enviar
+    success = notification_service.send_whatsapp(
+        phone=send_data.phone,
+        message=message
+    )
+    
+    if success:
+        prescription.is_sent = True
+        prescription.sent_at = datetime.utcnow()
+        db.commit()
+    
+    return {
+        "success": success,
+        "method": "whatsapp",
+        "sent_to": send_data.phone,
+        "sent_at": datetime.utcnow() if success else None,
+        "message": "Prescrição enviada com sucesso" if success else "Falha ao enviar prescrição"
+    }
+
+
+@router.post("/{prescription_id}/send-sms", response_model=dict)
+def send_prescription_by_sms(
+    prescription_id: str,
+    send_data: PrescriptionSendSMS,
+    db: Session = Depends(get_db)
+):
+    """Envia notificação de prescrição por SMS"""
+    from app.utils.notifications import notification_service
+    
+    prescription = db.query(Prescription).filter(Prescription.id == prescription_id).first()
+    
+    if not prescription:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Prescrição não encontrada"
+        )
+    
+    if not prescription.is_signed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Apenas prescrições assinadas podem ser enviadas"
+        )
+    
+    # Buscar paciente
+    patient = db.query(Patient).filter(Patient.id == prescription.patient_id).first()
+    
+    # Montar mensagem (SMS tem limite de 160 caracteres)
+    if send_data.message:
+        message = send_data.message[:160]
+    else:
+        message = f"Sua prescrição médica está pronta. {len(prescription.items)} medicamento(s) prescrito(s). Retire na recepção ou acesse o portal."
+    
+    # Enviar
+    success = notification_service.send_sms(
+        phone=send_data.phone,
+        message=message
+    )
+    
+    if success:
+        prescription.is_sent = True
+        prescription.sent_at = datetime.utcnow()
+        db.commit()
+    
+    return {
+        "success": success,
+        "method": "sms",
+        "sent_to": send_data.phone,
+        "sent_at": datetime.utcnow() if success else None,
+        "message": "Notificação enviada com sucesso" if success else "Falha ao enviar notificação"
     }
 
