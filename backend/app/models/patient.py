@@ -23,3 +23,5 @@ class Patient(Base):
     medical_records = relationship("MedicalRecord", back_populates="patient")
 
     prescriptions = relationship("Prescription", back_populates="patient")
+
+    documents = relationship("PatientDocument", back_populates="patient")
