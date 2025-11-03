@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.endpoints import patients, appointments, medical_records, prescriptions
+from app.api.endpoints import patients, appointments, medical_records, prescriptions, utils
 
 app = FastAPI(
     title="Sanaris Pro API",
     description="Sistema de Gestão de Clínicas e Consultórios",
-    version="1.0.0 - Fase 2.3"
+    version="1.0.0 - Fase 2.4"
 )
 
 app.add_middleware(
@@ -24,11 +24,12 @@ app.include_router(appointments.schedule_router)
 app.include_router(appointments.availability_router)
 app.include_router(medical_records.router)
 app.include_router(prescriptions.router)
+app.include_router(utils.router)
 
 @app.get("/")
 def read_root():
     return {
-        "message": "🏥 Sanaris Pro API - Fase 2.3 ✅",
+        "message": "🏥 Sanaris Pro API - Fase 2.4 ✅",
         "version": "1.0.0",
         "status": "online",
         "modules": {
@@ -38,7 +39,14 @@ def read_root():
             "schedules": "✅ Active", 
             "availability": "✅ Active",
             "medical_records": "✅ Active (17 endpoints)",
-            "prescriptions": "✅ Active (20 endpoints)"
+            "prescriptions": "✅ Active (20 endpoints)",
+            "utils": "✅ Active (6 endpoints)"
+        },
+        "improvements": {
+            "validators": "✅ CPF, CNPJ, Telefone, CEP, CRM",
+            "soft_delete": "✅ Exclusão lógica",
+            "pagination": "✅ Sistema de paginação",
+            "filters": "✅ Filtros avançados"
         }
     }
 
@@ -46,7 +54,7 @@ def read_root():
 def health_check():
     return {
         "status": "healthy",
-        "phase": "2.3",
+        "phase": "2.4",
         "features": [
             "appointments_crud",
             "confirmations",
@@ -59,6 +67,10 @@ def health_check():
             "patient_timeline",
             "prescriptions",
             "prescription_templates",
-            "digital_signature"
+            "digital_signature",
+            "brazilian_validators",
+            "soft_delete",
+            "pagination",
+            "advanced_filters"
         ]
     }
