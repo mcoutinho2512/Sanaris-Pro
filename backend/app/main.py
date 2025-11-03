@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.endpoints import patients, appointments, medical_records, prescriptions, utils, documents
+from app.api.endpoints import patients, appointments, medical_records, prescriptions, utils, documents, medical_record_extensions
 
 app = FastAPI(
     title="Sanaris Pro API",
     description="Sistema de Gestão de Clínicas e Consultórios",
-    version="1.0.0 - Fase 2.5"
+    version="1.0.0 - Fase 2.6"
 )
 
 app.add_middleware(
@@ -26,11 +26,12 @@ app.include_router(medical_records.router)
 app.include_router(prescriptions.router)
 app.include_router(utils.router)
 app.include_router(documents.router)
+app.include_router(medical_record_extensions.router)
 
 @app.get("/")
 def read_root():
     return {
-        "message": "🏥 Sanaris Pro API - Fase 2.5 ✅",
+        "message": "🏥 Sanaris Pro API - Fase 2.6 ✅",
         "version": "1.0.0",
         "status": "online",
         "modules": {
@@ -42,7 +43,8 @@ def read_root():
             "medical_records": "✅ Active (17 endpoints)",
             "prescriptions": "✅ Active (20 endpoints)",
             "utils": "✅ Active (6 endpoints)",
-            "documents": "✅ Active (16 endpoints)"
+            "documents": "✅ Active (16 endpoints)",
+            "medical_extensions": "✅ Active (19 endpoints)"
         },
         "improvements": {
             "validators": "✅ CPF, CNPJ, Telefone, CEP, CRM",
@@ -50,7 +52,10 @@ def read_root():
             "pagination": "✅ Sistema de paginação",
             "filters": "✅ Filtros avançados",
             "documents": "✅ Templates e Termos",
-            "quick_registration": "✅ Pré-cadastro rápido"
+            "quick_registration": "✅ Pré-cadastro rápido",
+            "specialty_templates": "✅ Templates por especialidade",
+            "exam_charts": "✅ Gráficos de exames",
+            "photo_evolution": "✅ Evolução fotográfica"
         }
     }
 
@@ -58,7 +63,7 @@ def read_root():
 def health_check():
     return {
         "status": "healthy",
-        "phase": "2.5",
+        "phase": "2.6",
         "features": [
             "appointments_crud",
             "confirmations",
@@ -78,6 +83,11 @@ def health_check():
             "advanced_filters",
             "document_templates",
             "patient_documents",
-            "quick_registration"
+            "quick_registration",
+            "specialty_templates",
+            "exam_results",
+            "exam_charts",
+            "photo_evolution",
+            "photo_comparison"
         ]
     }

@@ -3,6 +3,7 @@ from app.models.appointment import Appointment, AppointmentWaitlist, Professiona
 from app.models.medical_record import MedicalRecord, VitalSigns, MedicalRecordAttachment
 from app.models.prescription import Prescription, PrescriptionItem, PrescriptionTemplate
 from app.models.document import DocumentTemplate, PatientDocument, QuickPatientRegistration
+from app.models.medical_record_template import MedicalRecordTemplate, ExamResult, PhotoEvolution
 
 __all__ = [
     "Patient",
@@ -17,5 +18,8 @@ __all__ = [
     "PrescriptionTemplate",
     "DocumentTemplate",
     "PatientDocument",
-    "QuickPatientRegistration"
+    "QuickPatientRegistration",
+    "MedicalRecordTemplate",
+    "ExamResult",
+    "PhotoEvolution"
 ]
