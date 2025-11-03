@@ -1,0 +1,394 @@
+###
+### SANARIS PRO - TESTES DE API DE AGENDAMENTOS
+### Use a extensão REST Client do VS Code para executar
+###
+
+@baseUrl = http://localhost:8888/api/v1
+@token = seu_token_jwt_aqui
+
+### ============================================
+### 1. HEALTH CHECK
+### ============================================
+
+GET http://localhost:8888/health
+
+### ============================================
+### 2. CRIAR AGENDAMENTO
+### ============================================
+
+POST {{baseUrl}}/appointments/
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "patient_id": 1,
+  "healthcare_professional_id": 2,
+  "scheduled_date": "2025-11-10T14:00:00",
+  "duration_minutes": 30,
+  "appointment_type": "first_time",
+  "reason": "Consulta de rotina",
+  "notes": "Paciente com histórico de hipertensão",
+  "price": 150.00
+}
+
+### ============================================
+### 3. LISTAR AGENDAMENTOS (sem filtros)
+### ============================================
+
+GET {{baseUrl}}/appointments/?page=1&page_size=20
+Authorization: Bearer {{token}}
+
+### ============================================
+### 4. LISTAR AGENDAMENTOS (com filtros)
+### ============================================
+
+GET {{baseUrl}}/appointments/?status_filter=scheduled&date_from=2025-11-01&date_to=2025-11-30&professional_id=2
+Authorization: Bearer {{token}}
+
+### ============================================
+### 5. BUSCAR AGENDAMENTO POR ID
+### ============================================
+
+GET {{baseUrl}}/appointments/1
+Authorization: Bearer {{token}}
+
+### ============================================
+### 6. ATUALIZAR AGENDAMENTO
+### ============================================
+
+PUT {{baseUrl}}/appointments/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "scheduled_date": "2025-11-10T15:00:00",
+  "duration_minutes": 45,
+  "notes": "Paciente solicitou mais tempo"
+}
+
+### ============================================
+### 7. ENVIAR CONFIRMAÇÃO VIA WHATSAPP
+### ============================================
+
+POST {{baseUrl}}/appointments/1/send-confirmation?method=whatsapp
+Authorization: Bearer {{token}}
+
+### ============================================
+### 8. ENVIAR CONFIRMAÇÃO VIA EMAIL
+### ============================================
+
+POST {{baseUrl}}/appointments/1/send-confirmation?method=email
+Authorization: Bearer {{token}}
+
+### ============================================
+### 9. ENVIAR CONFIRMAÇÃO VIA SMS
+### ============================================
+
+POST {{baseUrl}}/appointments/1/send-confirmation?method=sms
+Authorization: Bearer {{token}}
+
+### ============================================
+### 10. CONFIRMAR AGENDAMENTO (resposta do paciente)
+### ============================================
+
+POST {{baseUrl}}/appointments/1/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "confirmation_method": "whatsapp",
+  "confirmed_by": "patient"
+}
+
+### ============================================
+### 11. CHECK-IN DO PACIENTE
+### ============================================
+
+POST {{baseUrl}}/appointments/1/check-in
+Authorization: Bearer {{token}}
+
+### ============================================
+### 12. INICIAR ATENDIMENTO
+### ============================================
+
+POST {{baseUrl}}/appointments/1/start
+Authorization: Bearer {{token}}
+
+### ============================================
+### 13. FINALIZAR ATENDIMENTO
+### ============================================
+
+POST {{baseUrl}}/appointments/1/complete
+Authorization: Bearer {{token}}
+
+### ============================================
+### 14. CANCELAR AGENDAMENTO
+### ============================================
+
+POST {{baseUrl}}/appointments/1/cancel
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cancellation_reason": "Paciente solicitou reagendamento por motivos pessoais"
+}
+
+### ============================================
+### 15. MARCAR COMO FALTA
+### ============================================
+
+POST {{baseUrl}}/appointments/1/no-show
+Authorization: Bearer {{token}}
+
+### ============================================
+### 16. DELETAR AGENDAMENTO
+### ============================================
+
+DELETE {{baseUrl}}/appointments/1
+Authorization: Bearer {{token}}
+
+### ============================================
+### LISTA DE ESPERA
+### ============================================
+
+### 17. ADICIONAR À LISTA DE ESPERA
+
+POST {{baseUrl}}/waitlist/
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "patient_id": 1,
+  "healthcare_professional_id": 2,
+  "preferred_date": "2025-11-15T14:00:00",
+  "preferred_period": "afternoon",
+  "appointment_type": "return",
+  "priority": 5,
+  "urgency_level": "medium",
+  "reason": "Paciente aguardando retorno",
+  "notes": "Preferência por horários após 14h"
+}
+
+### 18. LISTAR FILA DE ESPERA
+
+GET {{baseUrl}}/waitlist/?active_only=true
+Authorization: Bearer {{token}}
+
+### 19. BUSCAR ENTRADA DA FILA
+
+GET {{baseUrl}}/waitlist/1
+Authorization: Bearer {{token}}
+
+### 20. ATUALIZAR ENTRADA DA FILA
+
+PUT {{baseUrl}}/waitlist/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "priority": 8,
+  "urgency_level": "high",
+  "notes": "Paciente ligou solicitando prioridade"
+}
+
+### 21. NOTIFICAR VAGA DISPONÍVEL
+
+POST {{baseUrl}}/waitlist/1/notify?method=whatsapp&available_date=2025-11-10T14:00:00
+Authorization: Bearer {{token}}
+
+### 22. REMOVER DA FILA
+
+DELETE {{baseUrl}}/waitlist/1
+Authorization: Bearer {{token}}
+
+### ============================================
+### ESCALAS DE PROFISSIONAIS
+### ============================================
+
+### 23. CRIAR ESCALA (Segunda-feira)
+
+POST {{baseUrl}}/schedules/
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "healthcare_professional_id": 2,
+  "day_of_week": 0,
+  "start_time": "08:00",
+  "end_time": "18:00",
+  "break_start_time": "12:00",
+  "break_end_time": "13:00",
+  "default_appointment_duration": 30
+}
+
+### 24. CRIAR ESCALA (Terça-feira)
+
+POST {{baseUrl}}/schedules/
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "healthcare_professional_id": 2,
+  "day_of_week": 1,
+  "start_time": "08:00",
+  "end_time": "18:00",
+  "break_start_time": "12:00",
+  "break_end_time": "13:00",
+  "default_appointment_duration": 30
+}
+
+### 25. BUSCAR ESCALAS DO PROFISSIONAL
+
+GET {{baseUrl}}/schedules/professional/2
+Authorization: Bearer {{token}}
+
+### 26. BUSCAR ESCALA ESPECÍFICA
+
+GET {{baseUrl}}/schedules/1
+Authorization: Bearer {{token}}
+
+### 27. ATUALIZAR ESCALA
+
+PUT {{baseUrl}}/schedules/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "start_time": "09:00",
+  "end_time": "17:00",
+  "break_start_time": "12:30",
+  "break_end_time": "13:30"
+}
+
+### 28. REMOVER ESCALA
+
+DELETE {{baseUrl}}/schedules/1
+Authorization: Bearer {{token}}
+
+### ============================================
+### DISPONIBILIDADE
+### ============================================
+
+### 29. VERIFICAR HORÁRIOS DISPONÍVEIS
+
+GET {{baseUrl}}/availability/professional/2?date_filter=2025-11-10
+Authorization: Bearer {{token}}
+
+### ============================================
+### TESTES DE FLUXO COMPLETO
+### ============================================
+
+### FLUXO 1: Agendamento → Confirmação → Atendimento → Conclusão
+
+# Passo 1: Criar agendamento
+POST {{baseUrl}}/appointments/
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "patient_id": 1,
+  "healthcare_professional_id": 2,
+  "scheduled_date": "2025-11-10T14:00:00",
+  "duration_minutes": 30,
+  "appointment_type": "first_time",
+  "reason": "Consulta de rotina"
+}
+
+### Passo 2: Enviar confirmação via WhatsApp
+# (substitua {id} pelo ID retornado)
+POST {{baseUrl}}/appointments/{id}/send-confirmation?method=whatsapp
+Authorization: Bearer {{token}}
+
+### Passo 3: Confirmar (resposta do paciente)
+POST {{baseUrl}}/appointments/{id}/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "confirmation_method": "whatsapp",
+  "confirmed_by": "patient"
+}
+
+### Passo 4: Check-in na recepção
+POST {{baseUrl}}/appointments/{id}/check-in
+Authorization: Bearer {{token}}
+
+### Passo 5: Iniciar atendimento
+POST {{baseUrl}}/appointments/{id}/start
+Authorization: Bearer {{token}}
+
+### Passo 6: Finalizar atendimento
+POST {{baseUrl}}/appointments/{id}/complete
+Authorization: Bearer {{token}}
+
+### ============================================
+### TESTES DE VALIDAÇÃO
+### ============================================
+
+### TESTE 1: Criar agendamento com conflito de horário
+POST {{baseUrl}}/appointments/
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "patient_id": 1,
+  "healthcare_professional_id": 2,
+  "scheduled_date": "2025-11-10T14:00:00",
+  "duration_minutes": 30,
+  "appointment_type": "first_time"
+}
+
+### TESTE 2: Tentar confirmar agendamento já confirmado
+POST {{baseUrl}}/appointments/1/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "confirmation_method": "email",
+  "confirmed_by": "receptionist"
+}
+
+### TESTE 3: Tentar editar agendamento concluído
+PUT {{baseUrl}}/appointments/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "scheduled_date": "2025-11-11T14:00:00"
+}
+
+### ============================================
+### NOTAS DE USO
+### ============================================
+
+# 1. Antes de usar, obtenha um token JWT através do endpoint de login
+# 2. Substitua {{token}} pelo token obtido
+# 3. Ajuste os IDs conforme necessário
+# 4. day_of_week: 0=Segunda, 1=Terça, 2=Quarta, 3=Quinta, 4=Sexta, 5=Sábado, 6=Domingo
+# 5. Horários devem estar no formato HH:MM (24h)
+# 6. Datas devem estar no formato ISO 8601: YYYY-MM-DDTHH:MM:SS
+
+### ============================================
+### STATUS DOS ENDPOINTS
+### ============================================
+
+# ✅ Implementados:
+# - CRUD completo de agendamentos
+# - Fluxo completo de status
+# - Confirmações (send-confirmation, confirm)
+# - CRUD completo de lista de espera
+# - CRUD completo de escalas
+# - Verificação de disponibilidade
+# - Notificações (simuladas)
+
+# 🔄 Em desenvolvimento:
+# - Integração real com WhatsApp API
+# - Integração real com serviços de Email
+# - Integração real com serviços de SMS
+# - Sistema de lembretes automáticos (Celery)
+
+# 📋 Planejado:
+# - Bloqueio de horários (férias, feriados)
+# - Agendamento recorrente
+# - Relatórios de ocupação
+# - Webhooks para notificações em tempo real
