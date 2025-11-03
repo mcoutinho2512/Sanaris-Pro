@@ -19,3 +19,5 @@ class Patient(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     appointments = relationship("Appointment", back_populates="patient")
+
+    medical_records = relationship("MedicalRecord", back_populates="patient")
