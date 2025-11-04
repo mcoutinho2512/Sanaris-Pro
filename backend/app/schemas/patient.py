@@ -12,6 +12,15 @@ class PatientBase(BaseModel):
 class PatientCreate(PatientBase):
     tenant_id: str
 
+class PatientUpdate(BaseModel):
+    """Schema para atualização de paciente - todos os campos opcionais"""
+    full_name: Optional[str] = None
+    cpf: Optional[str] = None
+    birth_date: Optional[date] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    is_active: Optional[bool] = None
+
 class PatientResponse(PatientBase):
     id: str
     tenant_id: str

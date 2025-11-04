@@ -23,7 +23,7 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(patients.router)
+app.include_router(patients.router, prefix="/api/v1/patients", tags=["Patients"])
 app.include_router(appointments.router)
 app.include_router(appointments.waitlist_router)
 app.include_router(appointments.schedule_router)
