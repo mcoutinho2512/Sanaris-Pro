@@ -69,13 +69,13 @@ def get_cash_flow_dashboard(db: Session = Depends(get_db)):
     
     # Contas a receber pendentes
     pending_receivables = db.query(func.sum(AccountReceivable.remaining_amount)).filter(
-        AccountReceivable.status.in_([PaymentStatus.PENDING.value, PaymentStatus.PARTIALLY_PAID.value]),
+        AccountReceivable.status.in_(['PENDING', 'PARTIALLY_PAID']),
         AccountReceivable.is_deleted == False
     ).scalar() or Decimal(0)
     
     # Contas a pagar pendentes
     pending_payables = db.query(func.sum(AccountPayable.remaining_amount)).filter(
-        AccountPayable.status.in_([PaymentStatus.PENDING.value, PaymentStatus.PARTIALLY_PAID.value]),
+        AccountPayable.status.in_(['PENDING', 'PARTIALLY_PAID']),
         AccountPayable.is_deleted == False
     ).scalar() or Decimal(0)
     
@@ -337,7 +337,7 @@ def get_cash_flow_projection(
         ).filter(
             AccountReceivable.due_date >= date_start,
             AccountReceivable.due_date <= date_end,
-            AccountReceivable.status.in_([PaymentStatus.PENDING.value, PaymentStatus.PARTIALLY_PAID.value]),
+            AccountReceivable.status.in_(['PENDING', 'PARTIALLY_PAID']),
             AccountReceivable.is_deleted == False
         ).first()
         
@@ -348,7 +348,7 @@ def get_cash_flow_projection(
         ).filter(
             AccountPayable.due_date >= date_start,
             AccountPayable.due_date <= date_end,
-            AccountPayable.status.in_([PaymentStatus.PENDING.value, PaymentStatus.PARTIALLY_PAID.value]),
+            AccountPayable.status.in_(['PENDING', 'PARTIALLY_PAID']),
             AccountPayable.is_deleted == False
         ).first()
         
@@ -417,7 +417,7 @@ def get_cash_flow_alerts(db: Session = Depends(get_db)):
     # Contas vencidas a pagar
     overdue_payables = db.query(func.count(AccountPayable.id)).filter(
         AccountPayable.due_date < today,
-        AccountPayable.status.in_([PaymentStatus.PENDING.value, PaymentStatus.PARTIALLY_PAID.value]),
+        AccountPayable.status.in_(['PENDING', 'PARTIALLY_PAID']),
         AccountPayable.is_deleted == False
     ).scalar() or 0
     
