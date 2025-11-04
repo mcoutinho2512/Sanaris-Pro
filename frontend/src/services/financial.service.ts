@@ -1,4 +1,4 @@
-import api from '@/lib/api';
+import { api } from '@/lib/api';
 import { FinancialSummary } from '@/types';
 
 export const financialService = {
