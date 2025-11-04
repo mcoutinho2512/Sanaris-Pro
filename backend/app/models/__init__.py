@@ -6,7 +6,10 @@ from app.models.document import DocumentTemplate, PatientDocument, QuickPatientR
 from app.models.medical_record_template import MedicalRecordTemplate, ExamResult, PhotoEvolution
 from app.models.cfm_integration import CFMCredentials, CFMPrescriptionLog
 from app.models.digital_signature import DigitalCertificate, OTPConfiguration, SignatureLog
-from app.models.financial import AccountReceivable, PaymentInstallment, PaymentTransaction
+from app.models.financial import (
+    AccountReceivable, PaymentInstallment, PaymentTransaction,
+    Supplier, ExpenseCategory, CostCenter, AccountPayable, PayableTransaction
+)
 
 __all__ = [
     "Patient",
@@ -32,5 +35,10 @@ __all__ = [
     "SignatureLog",
     "AccountReceivable",
     "PaymentInstallment",
-    "PaymentTransaction"
+    "PaymentTransaction",
+    "Supplier",
+    "ExpenseCategory",
+    "CostCenter",
+    "AccountPayable",
+    "PayableTransaction"
 ]

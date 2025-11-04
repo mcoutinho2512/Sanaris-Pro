@@ -190,3 +190,218 @@ class PaymentTransaction(Base):
     
     def __repr__(self):
         return f"<PaymentTransaction {self.transaction_number}>"
+
+
+# ============================================
+# FORNECEDORES
+# ============================================
+
+class Supplier(Base):
+    """Fornecedores e prestadores de serviço"""
+    __tablename__ = "suppliers"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    
+    # Identificação
+    name = Column(String(255), nullable=False)
+    legal_name = Column(String(255))  # Razão social
+    document_type = Column(String(10), nullable=False)  # CPF ou CNPJ
+    document_number = Column(String(18), nullable=False, unique=True)
+    
+    # Contato
+    contact_person = Column(String(255))
+    phone = Column(String(20))
+    email = Column(String(255))
+    
+    # Endereço
+    address = Column(String(500))
+    city = Column(String(100))
+    state = Column(String(2))
+    zipcode = Column(String(10))
+    
+    # Dados bancários
+    bank_name = Column(String(100))
+    bank_code = Column(String(10))
+    agency = Column(String(20))
+    account_number = Column(String(30))
+    account_type = Column(String(20))  # corrente, poupança
+    pix_key = Column(String(255))
+    
+    # Categoria
+    category = Column(String(100))  # laboratório, material, serviço, etc
+    
+    # Status
+    is_active = Column(Boolean, default=True)
+    
+    # Notas
+    notes = Column(Text)
+    
+    # Soft delete
+    is_deleted = Column(Boolean, default=False)
+    deleted_at = Column(DateTime)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<Supplier {self.name}>"
+
+
+class ExpenseCategory(Base):
+    """Categorias de despesas"""
+    __tablename__ = "expense_categories"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    
+    # Identificação
+    name = Column(String(100), nullable=False, unique=True)
+    description = Column(Text)
+    
+    # Hierarquia
+    parent_id = Column(String(36))  # Categoria pai para subcategorias
+    
+    # Configuração
+    is_active = Column(Boolean, default=True)
+    color = Column(String(7))  # Cor hexadecimal para gráficos
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<ExpenseCategory {self.name}>"
+
+
+class CostCenter(Base):
+    """Centros de custo"""
+    __tablename__ = "cost_centers"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    
+    # Identificação
+    code = Column(String(20), nullable=False, unique=True)
+    name = Column(String(100), nullable=False)
+    description = Column(Text)
+    
+    # Responsável
+    manager_id = Column(String(36))  # ID do profissional responsável
+    
+    # Status
+    is_active = Column(Boolean, default=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<CostCenter {self.code} - {self.name}>"
+
+
+class AccountPayable(Base):
+    """Conta a pagar"""
+    __tablename__ = "accounts_payable"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    
+    # Identificação
+    bill_number = Column(String(50), unique=True, index=True)  # Número da conta
+    description = Column(Text, nullable=False)
+    
+    # Fornecedor
+    supplier_id = Column(String(36), nullable=False, index=True)
+    
+    # Categorização
+    expense_category_id = Column(String(36), nullable=False, index=True)
+    cost_center_id = Column(String(36), index=True)
+    
+    # Valores
+    original_amount = Column(Numeric(10, 2), nullable=False)
+    discount_amount = Column(Numeric(10, 2), default=0)
+    interest_amount = Column(Numeric(10, 2), default=0)
+    fine_amount = Column(Numeric(10, 2), default=0)
+    total_amount = Column(Numeric(10, 2), nullable=False)
+    paid_amount = Column(Numeric(10, 2), default=0)
+    remaining_amount = Column(Numeric(10, 2))
+    
+    # Datas
+    issue_date = Column(DateTime, nullable=False, default=datetime.utcnow)
+    due_date = Column(DateTime, nullable=False)
+    payment_date = Column(DateTime)
+    
+    # Status
+    status = Column(SQLEnum(PaymentStatus), default=PaymentStatus.PENDING, index=True)
+    
+    # Aprovação
+    requires_approval = Column(Boolean, default=False)
+    is_approved = Column(Boolean, default=False)
+    approved_by = Column(String(36))  # ID do aprovador
+    approved_at = Column(DateTime)
+    approval_notes = Column(Text)
+    
+    # Parcelamento
+    total_installments = Column(Integer, default=1)
+    current_installment = Column(Integer, default=1)
+    
+    # Recorrência
+    is_recurring = Column(Boolean, default=False)
+    recurrence_type = Column(SQLEnum(RecurrenceType), default=RecurrenceType.NONE)
+    
+    # Documentos
+    invoice_url = Column(String(500))
+    receipt_url = Column(String(500))
+    
+    # Notas
+    notes = Column(Text)
+    
+    # Soft delete
+    is_deleted = Column(Boolean, default=False)
+    deleted_at = Column(DateTime)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<AccountPayable {self.bill_number}>"
+
+
+class PayableTransaction(Base):
+    """Transações de pagamento de contas a pagar"""
+    __tablename__ = "payable_transactions"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    
+    # Relacionamento
+    account_payable_id = Column(String(36), nullable=False, index=True)
+    
+    # Identificação
+    transaction_number = Column(String(100), unique=True)
+    
+    # Pagamento
+    payment_method = Column(SQLEnum(PaymentMethodType), nullable=False)
+    amount = Column(Numeric(10, 2), nullable=False)
+    
+    # Detalhes específicos
+    pix_key = Column(String(255))
+    pix_txid = Column(String(100))
+    bank_slip_barcode = Column(String(100))
+    transfer_code = Column(String(100))
+    
+    # Aprovação
+    authorization_code = Column(String(100))
+    
+    # Status
+    is_confirmed = Column(Boolean, default=False)
+    confirmed_at = Column(DateTime)
+    
+    # Comprovante
+    receipt_url = Column(String(500))
+    
+    # Notas
+    notes = Column(Text)
+    
+    # Timestamps
+    payment_date = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<PayableTransaction {self.transaction_number}>"

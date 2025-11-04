@@ -3,13 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.endpoints import (
     patients, appointments, medical_records, prescriptions, 
     utils, documents, medical_record_extensions, 
-    cfm_integration, digital_signature, accounts_receivable
+    cfm_integration, digital_signature, 
+    accounts_receivable, accounts_payable
 )
 
 app = FastAPI(
     title="Sanaris Pro API",
     description="Sistema de Gestão de Clínicas e Consultórios",
-    version="1.0.0 - Fase 3.1"
+    version="1.0.0 - Fase 3.2"
 )
 
 app.add_middleware(
@@ -34,11 +35,12 @@ app.include_router(medical_record_extensions.router)
 app.include_router(cfm_integration.router)
 app.include_router(digital_signature.router)
 app.include_router(accounts_receivable.router)
+app.include_router(accounts_payable.router)
 
 @app.get("/")
 def read_root():
     return {
-        "message": "🏥 Sanaris Pro API - Fase 3.1 ✅",
+        "message": "🏥 Sanaris Pro API - Fase 3.2 ✅",
         "version": "1.0.0",
         "status": "online",
         "phase": "FASE 3 - GESTÃO FINANCEIRA",
@@ -55,27 +57,18 @@ def read_root():
             "medical_extensions": "✅ Active (19 endpoints)",
             "cfm_integration": "✅ Active (9 endpoints)",
             "digital_signature": "✅ Active (12 endpoints)",
-            "accounts_receivable": "✅ Active (12 endpoints)"
+            "accounts_receivable": "✅ Active (12 endpoints)",
+            "accounts_payable": "✅ Active (18 endpoints)"
         },
-        "improvements": {
-            "validators": "✅ CPF, CNPJ, Telefone, CEP, CRM",
-            "soft_delete": "✅ Exclusão lógica",
-            "pagination": "✅ Sistema de paginação",
-            "filters": "✅ Filtros avançados",
-            "documents": "✅ Templates e Termos",
-            "quick_registration": "✅ Pré-cadastro rápido",
-            "specialty_templates": "✅ Templates por especialidade",
-            "exam_charts": "✅ Gráficos de exames",
-            "photo_evolution": "✅ Evolução fotográfica",
-            "prescription_sending": "✅ Envio de prescrições (Email/WhatsApp/SMS)",
-            "cfm_integration": "✅ Integração CFM (prescricao.cfm.org.br)",
-            "icp_brasil": "✅ Assinatura ICP-Brasil (OPCIONAL)",
-            "otp_signature": "✅ Assinatura OTP (OPCIONAL)",
-            "accounts_receivable": "✅ Contas a Receber",
-            "payment_methods": "✅ 8 Formas de Pagamento",
-            "installments": "✅ Parcelamento até 12x",
-            "recurrence": "✅ Cobranças Recorrentes",
-            "overdue_charges": "✅ Juros e Multa Automáticos"
+        "financial": {
+            "accounts_receivable": "✅ Contas a Receber Completo",
+            "accounts_payable": "✅ Contas a Pagar Completo",
+            "suppliers": "✅ Gestão de Fornecedores",
+            "expense_categories": "✅ Categorias de Despesas",
+            "cost_centers": "✅ Centros de Custo",
+            "payment_approval": "✅ Aprovação de Pagamentos",
+            "cash_flow": "⏳ Próximo",
+            "professional_fees": "⏳ Próximo"
         }
     }
 
@@ -83,44 +76,6 @@ def read_root():
 def health_check():
     return {
         "status": "healthy",
-        "phase": "3.1",
-        "features": [
-            "appointments_crud",
-            "confirmations",
-            "waitlist",
-            "schedules",
-            "availability",
-            "medical_records",
-            "vital_signs",
-            "attachments",
-            "patient_timeline",
-            "prescriptions",
-            "prescription_templates",
-            "digital_signature",
-            "brazilian_validators",
-            "soft_delete",
-            "pagination",
-            "advanced_filters",
-            "document_templates",
-            "patient_documents",
-            "quick_registration",
-            "specialty_templates",
-            "exam_results",
-            "exam_charts",
-            "photo_evolution",
-            "photo_comparison",
-            "prescription_sending",
-            "cfm_authentication",
-            "cfm_prescription_send",
-            "cfm_sync",
-            "icp_brasil_signature",
-            "otp_signature",
-            "signature_logs",
-            "accounts_receivable",
-            "payment_transactions",
-            "installment_plans",
-            "recurring_billing",
-            "overdue_management",
-            "financial_reports"
-        ]
+        "phase": "3.2",
+        "total_endpoints": 161
     }

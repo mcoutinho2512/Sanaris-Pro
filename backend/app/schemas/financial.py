@@ -332,3 +332,294 @@ RECURRENCE_TYPE_LABELS = {
     "semiannual": "Semestral",
     "annual": "Anual"
 }
+
+
+# ============================================
+# FORNECEDORES
+# ============================================
+
+class SupplierBase(BaseModel):
+    """Schema base de fornecedor"""
+    name: str = Field(..., min_length=1, max_length=255)
+    legal_name: Optional[str] = Field(None, max_length=255)
+    document_type: str = Field(..., pattern="^(CPF|CNPJ)$")
+    document_number: str = Field(..., min_length=11, max_length=18)
+    contact_person: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = Field(None, min_length=2, max_length=2)
+    zipcode: Optional[str] = None
+    bank_name: Optional[str] = None
+    bank_code: Optional[str] = None
+    agency: Optional[str] = None
+    account_number: Optional[str] = None
+    account_type: Optional[str] = None
+    pix_key: Optional[str] = None
+    category: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class SupplierCreate(SupplierBase):
+    """Schema para criação"""
+    pass
+
+
+class SupplierUpdate(BaseModel):
+    """Schema para atualização"""
+    name: Optional[str] = None
+    legal_name: Optional[str] = None
+    contact_person: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zipcode: Optional[str] = None
+    bank_name: Optional[str] = None
+    bank_code: Optional[str] = None
+    agency: Optional[str] = None
+    account_number: Optional[str] = None
+    account_type: Optional[str] = None
+    pix_key: Optional[str] = None
+    category: Optional[str] = None
+    is_active: Optional[bool] = None
+    notes: Optional[str] = None
+
+
+class SupplierResponse(BaseModel):
+    """Schema de resposta"""
+    id: str
+    name: str
+    legal_name: Optional[str] = None
+    document_type: str
+    document_number: str
+    contact_person: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zipcode: Optional[str] = None
+    bank_name: Optional[str] = None
+    pix_key: Optional[str] = None
+    category: Optional[str] = None
+    is_active: bool
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+# ============================================
+# CATEGORIAS DE DESPESAS
+# ============================================
+
+class ExpenseCategoryCreate(BaseModel):
+    """Schema para criação de categoria"""
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = None
+    parent_id: Optional[str] = None
+    color: Optional[str] = Field(None, pattern="^#[0-9A-Fa-f]{6}$")
+
+
+class ExpenseCategoryResponse(BaseModel):
+    """Schema de resposta"""
+    id: str
+    name: str
+    description: Optional[str] = None
+    parent_id: Optional[str] = None
+    is_active: bool
+    color: Optional[str] = None
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+# ============================================
+# CENTROS DE CUSTO
+# ============================================
+
+class CostCenterCreate(BaseModel):
+    """Schema para criação de centro de custo"""
+    code: str = Field(..., min_length=1, max_length=20)
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = None
+    manager_id: Optional[str] = None
+
+
+class CostCenterResponse(BaseModel):
+    """Schema de resposta"""
+    id: str
+    code: str
+    name: str
+    description: Optional[str] = None
+    manager_id: Optional[str] = None
+    is_active: bool
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+# ============================================
+# CONTAS A PAGAR
+# ============================================
+
+class AccountPayableBase(BaseModel):
+    """Schema base de conta a pagar"""
+    description: str = Field(..., min_length=1, max_length=1000)
+    supplier_id: str
+    expense_category_id: str
+    cost_center_id: Optional[str] = None
+    original_amount: Decimal = Field(..., gt=0)
+    discount_amount: Decimal = Field(0, ge=0)
+    due_date: datetime
+    total_installments: int = Field(1, ge=1, le=12)
+    is_recurring: bool = False
+    recurrence_type: RecurrenceTypeEnum = RecurrenceTypeEnum.NONE
+    requires_approval: bool = False
+    notes: Optional[str] = None
+
+
+class AccountPayableCreate(AccountPayableBase):
+    """Schema para criação"""
+    pass
+
+
+class AccountPayableUpdate(BaseModel):
+    """Schema para atualização"""
+    description: Optional[str] = None
+    expense_category_id: Optional[str] = None
+    cost_center_id: Optional[str] = None
+    discount_amount: Optional[Decimal] = Field(None, ge=0)
+    due_date: Optional[datetime] = None
+    notes: Optional[str] = None
+
+
+class AccountPayableResponse(BaseModel):
+    """Schema de resposta"""
+    id: str
+    bill_number: str
+    description: str
+    supplier_id: str
+    expense_category_id: str
+    cost_center_id: Optional[str] = None
+    original_amount: Decimal
+    discount_amount: Decimal
+    interest_amount: Decimal
+    fine_amount: Decimal
+    total_amount: Decimal
+    paid_amount: Decimal
+    remaining_amount: Decimal
+    issue_date: datetime
+    due_date: datetime
+    payment_date: Optional[datetime] = None
+    status: str
+    total_installments: int
+    current_installment: int
+    is_recurring: bool
+    recurrence_type: str
+    requires_approval: bool
+    is_approved: bool
+    approved_by: Optional[str] = None
+    approved_at: Optional[datetime] = None
+    invoice_url: Optional[str] = None
+    receipt_url: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class AccountPayableListResponse(BaseModel):
+    """Schema de lista simplificada"""
+    id: str
+    bill_number: str
+    description: str
+    supplier_id: str
+    total_amount: Decimal
+    paid_amount: Decimal
+    remaining_amount: Decimal
+    due_date: datetime
+    payment_date: Optional[datetime] = None
+    status: str
+    requires_approval: bool
+    is_approved: bool
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+# ============================================
+# TRANSAÇÕES DE PAGAMENTO (CONTAS A PAGAR)
+# ============================================
+
+class PayableTransactionCreate(BaseModel):
+    """Schema para pagamento de conta"""
+    account_payable_id: str
+    payment_method: PaymentMethodEnum
+    amount: Decimal = Field(..., gt=0)
+    pix_key: Optional[str] = None
+    pix_txid: Optional[str] = None
+    bank_slip_barcode: Optional[str] = None
+    transfer_code: Optional[str] = None
+    authorization_code: Optional[str] = None
+    notes: Optional[str] = None
+    payment_date: Optional[datetime] = None
+
+
+class PayableTransactionResponse(BaseModel):
+    """Schema de resposta"""
+    id: str
+    account_payable_id: str
+    transaction_number: str
+    payment_method: str
+    amount: Decimal
+    pix_key: Optional[str] = None
+    pix_txid: Optional[str] = None
+    bank_slip_barcode: Optional[str] = None
+    transfer_code: Optional[str] = None
+    authorization_code: Optional[str] = None
+    is_confirmed: bool
+    confirmed_at: Optional[datetime] = None
+    receipt_url: Optional[str] = None
+    notes: Optional[str] = None
+    payment_date: datetime
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+# ============================================
+# APROVAÇÃO
+# ============================================
+
+class ApproveAccountRequest(BaseModel):
+    """Request para aprovar conta"""
+    account_id: str
+    approved: bool
+    approval_notes: Optional[str] = None
+
+
+# ============================================
+# LABELS CONTAS A PAGAR
+# ============================================
+
+SUPPLIER_CATEGORY_LABELS = {
+    "laboratory": "Laboratório",
+    "material": "Material Médico",
+    "service": "Serviços",
+    "rent": "Aluguel",
+    "utilities": "Utilidades",
+    "maintenance": "Manutenção",
+    "marketing": "Marketing",
+    "technology": "Tecnologia",
+    "other": "Outros"
+}
