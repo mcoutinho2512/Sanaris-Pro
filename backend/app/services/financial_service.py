@@ -253,6 +253,64 @@ class FinancialService:
         formatted = f"{amount:,.2f}"
         formatted = formatted.replace(",", "X").replace(".", ",").replace("X", ".")
         return f"R$ {formatted}"
+    
+    # ============================================
+    # FLUXO DE CAIXA
+    # ============================================
+    
+    def calculate_cash_balance(
+        self,
+        receivables_paid: Decimal,
+        payables_paid: Decimal,
+        initial_balance: Decimal = Decimal(0)
+    ) -> Decimal:
+        """Calcula saldo de caixa"""
+        balance = initial_balance + receivables_paid - payables_paid
+        return round(balance, 2)
+    
+    def get_period_summary(
+        self,
+        start_date,
+        end_date,
+        receivables_list,
+        payables_list
+    ):
+        """
+        Resumo do período
+        
+        Returns:
+            Dict com total_income, total_expense, balance
+        """
+        total_income = Decimal(0)
+        total_expense = Decimal(0)
+        
+        # Contas a receber pagas no período
+        for receivable in receivables_list:
+            if receivable.payment_date and start_date <= receivable.payment_date <= end_date:
+                total_income += receivable.paid_amount
+        
+        # Contas a pagar pagas no período
+        for payable in payables_list:
+            if payable.payment_date and start_date <= payable.payment_date <= end_date:
+                total_expense += payable.paid_amount
+        
+        balance = total_income - total_expense
+        
+        return {
+            "total_income": round(total_income, 2),
+            "total_expense": round(total_expense, 2),
+            "balance": round(balance, 2)
+        }
+    
+    def get_projected_balance(
+        self,
+        current_balance: Decimal,
+        future_receivables: Decimal,
+        future_payables: Decimal
+    ) -> Decimal:
+        """Calcula saldo projetado"""
+        projected = current_balance + future_receivables - future_payables
+        return round(projected, 2)
 
 
 # Singleton

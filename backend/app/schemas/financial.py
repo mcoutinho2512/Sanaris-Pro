@@ -623,3 +623,87 @@ SUPPLIER_CATEGORY_LABELS = {
     "technology": "Tecnologia",
     "other": "Outros"
 }
+
+
+# ============================================
+# FLUXO DE CAIXA
+# ============================================
+
+class CashFlowDashboard(BaseModel):
+    """Dashboard principal de fluxo de caixa"""
+    current_balance: Decimal
+    today_income: Decimal
+    today_expense: Decimal
+    today_balance: Decimal
+    month_income: Decimal
+    month_expense: Decimal
+    month_balance: Decimal
+    pending_receivables: Decimal
+    pending_payables: Decimal
+    projected_balance: Decimal
+
+
+class CashFlowPeriod(BaseModel):
+    """Fluxo de caixa de um período"""
+    period_start: date
+    period_end: date
+    total_income: Decimal
+    total_expense: Decimal
+    balance: Decimal
+    income_count: int
+    expense_count: int
+
+
+class DailyCashFlow(BaseModel):
+    """Fluxo de caixa diário"""
+    date: date
+    income: Decimal
+    expense: Decimal
+    balance: Decimal
+
+
+class MonthlyCashFlow(BaseModel):
+    """Fluxo de caixa mensal"""
+    year: int
+    month: int
+    month_name: str
+    income: Decimal
+    expense: Decimal
+    balance: Decimal
+
+
+class CategoryExpense(BaseModel):
+    """Despesa por categoria"""
+    category_id: str
+    category_name: str
+    total_amount: Decimal
+    percentage: float
+    count: int
+
+
+class ProfessionalRevenue(BaseModel):
+    """Receita por profissional"""
+    professional_id: str
+    professional_name: str
+    total_amount: Decimal
+    percentage: float
+    count: int
+
+
+class CashFlowProjection(BaseModel):
+    """Projeção de caixa"""
+    projection_date: date
+    projected_income: Decimal
+    projected_expense: Decimal
+    projected_balance: Decimal
+    receivables_due: int
+    payables_due: int
+
+
+class CashFlowAlert(BaseModel):
+    """Alerta de fluxo de caixa"""
+    alert_type: str  # low_balance, overdue, projection
+    severity: str  # low, medium, high
+    message: str
+    value: Optional[Decimal] = None
+    date: Optional[date] = None
