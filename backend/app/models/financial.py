@@ -405,3 +405,145 @@ class PayableTransaction(Base):
     
     def __repr__(self):
         return f"<PayableTransaction {self.transaction_number}>"
+
+
+# ============================================
+# REPASSE PROFISSIONAIS
+# ============================================
+
+class ProfessionalFeeType(enum.Enum):
+    """Tipo de repasse"""
+    PERCENTAGE = "percentage"  # Percentual sobre receita
+    FIXED = "fixed"  # Valor fixo por atendimento
+
+
+class ProfessionalFeeConfiguration(Base):
+    """Configuração de repasse por profissional"""
+    __tablename__ = "professional_fee_configurations"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    
+    # Profissional
+    healthcare_professional_id = Column(String(36), nullable=False, unique=True, index=True)
+    
+    # Tipo de repasse
+    fee_type = Column(SQLEnum(ProfessionalFeeType), nullable=False, default=ProfessionalFeeType.PERCENTAGE)
+    
+    # Valores
+    percentage = Column(Numeric(5, 2))  # Ex: 40.00 para 40%
+    fixed_amount = Column(Numeric(10, 2))  # Valor fixo por atendimento
+    
+    # Retenções
+    apply_inss = Column(Boolean, default=False)
+    inss_rate = Column(Numeric(5, 2), default=11.0)  # 11%
+    
+    apply_ir = Column(Boolean, default=False)
+    ir_rate = Column(Numeric(5, 2), default=0)  # Variável
+    
+    apply_iss = Column(Boolean, default=False)
+    iss_rate = Column(Numeric(5, 2), default=0)  # Variável por cidade
+    
+    other_deductions = Column(Numeric(10, 2), default=0)  # Outras deduções
+    
+    # Configuração
+    minimum_amount = Column(Numeric(10, 2))  # Valor mínimo para gerar repasse
+    payment_day = Column(Integer)  # Dia do mês para pagamento (1-31)
+    
+    # Status
+    is_active = Column(Boolean, default=True)
+    
+    # Notas
+    notes = Column(Text)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<ProfessionalFeeConfig {self.healthcare_professional_id}>"
+
+
+class ProfessionalFee(Base):
+    """Repasse gerado para profissional"""
+    __tablename__ = "professional_fees"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    
+    # Identificação
+    fee_number = Column(String(50), unique=True, index=True)
+    
+    # Profissional
+    healthcare_professional_id = Column(String(36), nullable=False, index=True)
+    
+    # Período
+    reference_month = Column(Integer, nullable=False)  # 1-12
+    reference_year = Column(Integer, nullable=False)
+    period_start = Column(DateTime, nullable=False)
+    period_end = Column(DateTime, nullable=False)
+    
+    # Valores
+    gross_amount = Column(Numeric(10, 2), nullable=False)  # Valor bruto
+    inss_amount = Column(Numeric(10, 2), default=0)
+    ir_amount = Column(Numeric(10, 2), default=0)
+    iss_amount = Column(Numeric(10, 2), default=0)
+    other_deductions = Column(Numeric(10, 2), default=0)
+    net_amount = Column(Numeric(10, 2), nullable=False)  # Valor líquido
+    
+    # Estatísticas
+    total_appointments = Column(Integer, default=0)  # Total de atendimentos
+    total_revenue = Column(Numeric(10, 2), default=0)  # Receita total gerada
+    
+    # Status
+    status = Column(SQLEnum(PaymentStatus), default=PaymentStatus.PENDING)
+    
+    # Pagamento
+    payment_date = Column(DateTime)
+    payment_method = Column(SQLEnum(PaymentMethodType))
+    payment_reference = Column(String(100))  # Referência do pagamento
+    
+    # Documentos
+    receipt_url = Column(String(500))
+    
+    # Notas
+    notes = Column(Text)
+    
+    # Soft delete
+    is_deleted = Column(Boolean, default=False)
+    deleted_at = Column(DateTime)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<ProfessionalFee {self.fee_number}>"
+
+
+class ProfessionalFeeItem(Base):
+    """Itens do repasse (detalhamento por atendimento)"""
+    __tablename__ = "professional_fee_items"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    
+    # Relacionamento
+    professional_fee_id = Column(String(36), nullable=False, index=True)
+    
+    # Referência
+    account_receivable_id = Column(String(36), index=True)  # Conta que gerou o repasse
+    appointment_id = Column(String(36), index=True)  # Atendimento relacionado
+    
+    # Descrição
+    description = Column(Text)
+    
+    # Valores
+    service_amount = Column(Numeric(10, 2), nullable=False)  # Valor do serviço
+    fee_amount = Column(Numeric(10, 2), nullable=False)  # Valor do repasse
+    
+    # Data
+    service_date = Column(DateTime, nullable=False)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<ProfessionalFeeItem {self.id}>"

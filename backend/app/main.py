@@ -4,13 +4,13 @@ from app.api.endpoints import (
     patients, appointments, medical_records, prescriptions, 
     utils, documents, medical_record_extensions, 
     cfm_integration, digital_signature, 
-    accounts_receivable, accounts_payable, cash_flow
+    accounts_receivable, accounts_payable, cash_flow, professional_fees
 )
 
 app = FastAPI(
     title="Sanaris Pro API",
     description="Sistema de Gestão de Clínicas e Consultórios",
-    version="1.0.0 - Fase 3.3"
+    version="1.0.0 - Fase 3.4 - COMPLETO"
 )
 
 app.add_middleware(
@@ -37,14 +37,15 @@ app.include_router(digital_signature.router)
 app.include_router(accounts_receivable.router)
 app.include_router(accounts_payable.router)
 app.include_router(cash_flow.router)
+app.include_router(professional_fees.router)
 
 @app.get("/")
 def read_root():
     return {
-        "message": "🏥 Sanaris Pro API - Fase 3.3 ✅",
+        "message": "🏥 Sanaris Pro API - FASE 3 COMPLETA! 🎉",
         "version": "1.0.0",
         "status": "online",
-        "phase": "FASE 3 - GESTÃO FINANCEIRA",
+        "phase": "FASE 3 - GESTÃO FINANCEIRA (100% COMPLETA)",
         "modules": {
             "patients": "✅ Active",
             "appointments": "✅ Active (29 endpoints)",
@@ -57,35 +58,48 @@ def read_root():
             "digital_signature": "✅ Active (12 endpoints)",
             "accounts_receivable": "✅ Active (12 endpoints)",
             "accounts_payable": "✅ Active (18 endpoints)",
-            "cash_flow": "✅ Active (7 endpoints)"
+            "cash_flow": "✅ Active (7 endpoints)",
+            "professional_fees": "✅ Active (13 endpoints)"
         },
-        "financial": {
-            "accounts_receivable": "✅ Contas a Receber",
-            "accounts_payable": "✅ Contas a Pagar",
-            "suppliers": "✅ Fornecedores",
-            "expense_categories": "✅ Categorias",
-            "cost_centers": "✅ Centros de Custo",
-            "payment_approval": "✅ Aprovação",
-            "cash_flow_dashboard": "✅ Dashboard Completo",
-            "cash_flow_reports": "✅ Relatórios",
-            "cash_flow_projection": "✅ Projeções",
-            "professional_fees": "⏳ Próximo"
-        }
+        "financial_complete": {
+            "accounts_receivable": "✅ 100% Completo",
+            "accounts_payable": "✅ 100% Completo",
+            "suppliers": "✅ 100% Completo",
+            "expense_categories": "✅ 100% Completo",
+            "cost_centers": "✅ 100% Completo",
+            "payment_approval": "✅ 100% Completo",
+            "cash_flow_dashboard": "✅ 100% Completo",
+            "cash_flow_reports": "✅ 100% Completo",
+            "cash_flow_projection": "✅ 100% Completo",
+            "professional_fees": "✅ 100% Completo"
+        },
+        "total_endpoints": 181
     }
 
 @app.get("/health")
 def health_check():
     return {
         "status": "healthy",
-        "phase": "3.3",
-        "total_endpoints": 168,
+        "phase": "3.4 - COMPLETE",
+        "total_endpoints": 181,
         "features": [
+            "patient_management",
+            "appointment_scheduling",
+            "intelligent_waitlist",
+            "professional_schedules",
+            "medical_records",
+            "vital_signs",
+            "prescriptions",
+            "cfm_integration",
+            "digital_signature",
+            "accounts_receivable",
+            "accounts_payable",
             "cash_flow_dashboard",
-            "daily_cash_flow",
-            "monthly_cash_flow",
-            "period_analysis",
-            "expense_by_category",
-            "cash_projection",
-            "financial_alerts"
+            "professional_fees",
+            "supplier_management",
+            "expense_categories",
+            "cost_centers",
+            "financial_reports",
+            "financial_projections"
         ]
     }

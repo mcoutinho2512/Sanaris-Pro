@@ -8,7 +8,8 @@ from app.models.cfm_integration import CFMCredentials, CFMPrescriptionLog
 from app.models.digital_signature import DigitalCertificate, OTPConfiguration, SignatureLog
 from app.models.financial import (
     AccountReceivable, PaymentInstallment, PaymentTransaction,
-    Supplier, ExpenseCategory, CostCenter, AccountPayable, PayableTransaction
+    Supplier, ExpenseCategory, CostCenter, AccountPayable, PayableTransaction,
+    ProfessionalFeeConfiguration, ProfessionalFee, ProfessionalFeeItem
 )
 
 __all__ = [
@@ -40,5 +41,8 @@ __all__ = [
     "ExpenseCategory",
     "CostCenter",
     "AccountPayable",
-    "PayableTransaction"
+    "PayableTransaction",
+    "ProfessionalFeeConfiguration",
+    "ProfessionalFee",
+    "ProfessionalFeeItem"
 ]

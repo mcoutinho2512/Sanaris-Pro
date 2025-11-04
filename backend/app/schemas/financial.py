@@ -707,3 +707,197 @@ class CashFlowAlert(BaseModel):
     message: str
     value: Optional[Decimal] = None
     date: Optional[date] = None
+
+
+# ============================================
+# REPASSE PROFISSIONAIS
+# ============================================
+
+class ProfessionalFeeTypeEnum(str, Enum):
+    """Tipo de repasse"""
+    PERCENTAGE = "percentage"
+    FIXED = "fixed"
+
+
+class ProfessionalFeeConfigurationBase(BaseModel):
+    """Schema base de configuração"""
+    healthcare_professional_id: str
+    fee_type: ProfessionalFeeTypeEnum
+    percentage: Optional[Decimal] = Field(None, ge=0, le=100)
+    fixed_amount: Optional[Decimal] = Field(None, ge=0)
+    apply_inss: bool = False
+    inss_rate: Decimal = Field(11.0, ge=0, le=100)
+    apply_ir: bool = False
+    ir_rate: Decimal = Field(0, ge=0, le=100)
+    apply_iss: bool = False
+    iss_rate: Decimal = Field(0, ge=0, le=100)
+    other_deductions: Decimal = Field(0, ge=0)
+    minimum_amount: Optional[Decimal] = Field(None, ge=0)
+    payment_day: Optional[int] = Field(None, ge=1, le=31)
+    notes: Optional[str] = None
+
+
+class ProfessionalFeeConfigurationCreate(ProfessionalFeeConfigurationBase):
+    """Schema para criação"""
+    pass
+
+
+class ProfessionalFeeConfigurationUpdate(BaseModel):
+    """Schema para atualização"""
+    fee_type: Optional[ProfessionalFeeTypeEnum] = None
+    percentage: Optional[Decimal] = Field(None, ge=0, le=100)
+    fixed_amount: Optional[Decimal] = Field(None, ge=0)
+    apply_inss: Optional[bool] = None
+    inss_rate: Optional[Decimal] = Field(None, ge=0, le=100)
+    apply_ir: Optional[bool] = None
+    ir_rate: Optional[Decimal] = Field(None, ge=0, le=100)
+    apply_iss: Optional[bool] = None
+    iss_rate: Optional[Decimal] = Field(None, ge=0, le=100)
+    other_deductions: Optional[Decimal] = Field(None, ge=0)
+    minimum_amount: Optional[Decimal] = Field(None, ge=0)
+    payment_day: Optional[int] = Field(None, ge=1, le=31)
+    is_active: Optional[bool] = None
+    notes: Optional[str] = None
+
+
+class ProfessionalFeeConfigurationResponse(BaseModel):
+    """Schema de resposta"""
+    id: str
+    healthcare_professional_id: str
+    fee_type: str
+    percentage: Optional[Decimal] = None
+    fixed_amount: Optional[Decimal] = None
+    apply_inss: bool
+    inss_rate: Decimal
+    apply_ir: bool
+    ir_rate: Decimal
+    apply_iss: bool
+    iss_rate: Decimal
+    other_deductions: Decimal
+    minimum_amount: Optional[Decimal] = None
+    payment_day: Optional[int] = None
+    is_active: bool
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class ProfessionalFeeItemResponse(BaseModel):
+    """Schema de item do repasse"""
+    id: str
+    professional_fee_id: str
+    account_receivable_id: Optional[str] = None
+    appointment_id: Optional[str] = None
+    description: Optional[str] = None
+    service_amount: Decimal
+    fee_amount: Decimal
+    service_date: datetime
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class ProfessionalFeeResponse(BaseModel):
+    """Schema de resposta de repasse"""
+    id: str
+    fee_number: str
+    healthcare_professional_id: str
+    reference_month: int
+    reference_year: int
+    period_start: datetime
+    period_end: datetime
+    gross_amount: Decimal
+    inss_amount: Decimal
+    ir_amount: Decimal
+    iss_amount: Decimal
+    other_deductions: Decimal
+    net_amount: Decimal
+    total_appointments: int
+    total_revenue: Decimal
+    status: str
+    payment_date: Optional[datetime] = None
+    payment_method: Optional[str] = None
+    payment_reference: Optional[str] = None
+    receipt_url: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class ProfessionalFeeListResponse(BaseModel):
+    """Schema de lista simplificada"""
+    id: str
+    fee_number: str
+    healthcare_professional_id: str
+    reference_month: int
+    reference_year: int
+    gross_amount: Decimal
+    net_amount: Decimal
+    total_appointments: int
+    status: str
+    payment_date: Optional[datetime] = None
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class GenerateFeeRequest(BaseModel):
+    """Request para gerar repasse"""
+    healthcare_professional_id: str
+    reference_month: int = Field(..., ge=1, le=12)
+    reference_year: int = Field(..., ge=2020, le=2100)
+
+
+class PayFeeRequest(BaseModel):
+    """Request para pagar repasse"""
+    fee_id: str
+    payment_method: PaymentMethodEnum
+    payment_reference: Optional[str] = None
+    payment_date: Optional[datetime] = None
+    notes: Optional[str] = None
+
+
+class ProfessionalFeeSummary(BaseModel):
+    """Resumo de repasses de um profissional"""
+    professional_id: str
+    total_fees: int
+    total_gross: Decimal
+    total_net: Decimal
+    total_deductions: Decimal
+    pending_amount: Decimal
+    paid_amount: Decimal
+
+
+class MonthlyFeeSummary(BaseModel):
+    """Resumo mensal de repasses"""
+    year: int
+    month: int
+    month_name: str
+    total_professionals: int
+    total_fees: int
+    total_gross: Decimal
+    total_net: Decimal
+    total_deductions: Decimal
+
+
+# ============================================
+# LABELS REPASSE
+# ============================================
+
+FEE_TYPE_LABELS = {
+    "percentage": "Percentual",
+    "fixed": "Valor Fixo"
+}
+
+MONTH_NAMES = [
+    "", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+]
