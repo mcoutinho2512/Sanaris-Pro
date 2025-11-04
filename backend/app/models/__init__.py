@@ -11,6 +11,10 @@ from app.models.financial import (
     Supplier, ExpenseCategory, CostCenter, AccountPayable, PayableTransaction,
     ProfessionalFeeConfiguration, ProfessionalFee, ProfessionalFeeItem
 )
+from app.models.tiss import (
+    HealthInsuranceOperator, TussProcedure, Beneficiary,
+    TissGuide, TissGuideProcedure, TissBatch
+)
 
 __all__ = [
     "Patient",
@@ -44,5 +48,11 @@ __all__ = [
     "PayableTransaction",
     "ProfessionalFeeConfiguration",
     "ProfessionalFee",
-    "ProfessionalFeeItem"
+    "ProfessionalFeeItem",
+    "HealthInsuranceOperator",
+    "TussProcedure",
+    "Beneficiary",
+    "TissGuide",
+    "TissGuideProcedure",
+    "TissBatch"
 ]
