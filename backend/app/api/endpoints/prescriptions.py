@@ -58,10 +58,10 @@ def create_prescription(
     
     # Adiciona os items
     for idx, item_data in enumerate(prescription_data.items):
+        item_dict = item_data.dict()
         item = PrescriptionItem(
             prescription_id=prescription.id,
-            display_order=idx,
-            **item_data.dict()
+            **item_dict
         )
         db.add(item)
     
