@@ -114,7 +114,7 @@ def list_appointments(
 
 
 @router.get("/{appointment_id}", response_model=AppointmentResponse)
-def get_appointment(appointment_id: int, db: Session = Depends(get_db)):
+def get_appointment(appointment_id: str, db: Session = Depends(get_db)):
     """Busca um agendamento por ID"""
     
     appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
@@ -130,7 +130,7 @@ def get_appointment(appointment_id: int, db: Session = Depends(get_db)):
 
 @router.put("/{appointment_id}", response_model=AppointmentResponse)
 def update_appointment(
-    appointment_id: int,
+    appointment_id: str,
     appointment_data: AppointmentUpdate,
     db: Session = Depends(get_db)
 ):
@@ -163,7 +163,7 @@ def update_appointment(
 
 
 @router.delete("/{appointment_id}")
-def delete_appointment(appointment_id: int, db: Session = Depends(get_db)):
+def delete_appointment(appointment_id: str, db: Session = Depends(get_db)):
     """Deleta um agendamento"""
     
     appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
@@ -186,7 +186,7 @@ def delete_appointment(appointment_id: int, db: Session = Depends(get_db)):
 
 @router.post("/{appointment_id}/send-confirmation")
 async def send_appointment_confirmation(
-    appointment_id: int,
+    appointment_id: str,
     method: ConfirmationMethod = Query(..., description="Método de envio"),
     db: Session = Depends(get_db)
 ):
@@ -233,7 +233,7 @@ async def send_appointment_confirmation(
 
 @router.post("/{appointment_id}/confirm", response_model=AppointmentResponse)
 def confirm_appointment(
-    appointment_id: int,
+    appointment_id: str,
     confirm_data: AppointmentConfirm,
     db: Session = Depends(get_db)
 ):
@@ -270,7 +270,7 @@ def confirm_appointment(
 # ============================================
 
 @router.post("/{appointment_id}/check-in", response_model=AppointmentResponse)
-def check_in_appointment(appointment_id: int, db: Session = Depends(get_db)):
+def check_in_appointment(appointment_id: str, db: Session = Depends(get_db)):
     """Faz check-in do paciente"""
     
     appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
@@ -290,7 +290,7 @@ def check_in_appointment(appointment_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/{appointment_id}/start", response_model=AppointmentResponse)
-def start_appointment(appointment_id: int, db: Session = Depends(get_db)):
+def start_appointment(appointment_id: str, db: Session = Depends(get_db)):
     """Inicia o atendimento"""
     
     appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
@@ -317,7 +317,7 @@ def start_appointment(appointment_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/{appointment_id}/complete", response_model=AppointmentResponse)
-def complete_appointment(appointment_id: int, db: Session = Depends(get_db)):
+def complete_appointment(appointment_id: str, db: Session = Depends(get_db)):
     """Finaliza o atendimento"""
     
     appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
@@ -345,7 +345,7 @@ def complete_appointment(appointment_id: int, db: Session = Depends(get_db)):
 
 @router.post("/{appointment_id}/cancel", response_model=AppointmentResponse)
 def cancel_appointment(
-    appointment_id: int,
+    appointment_id: str,
     cancel_data: AppointmentCancel,
     db: Session = Depends(get_db)
 ):
@@ -375,7 +375,7 @@ def cancel_appointment(
 
 
 @router.post("/{appointment_id}/no-show", response_model=AppointmentResponse)
-def mark_no_show(appointment_id: int, db: Session = Depends(get_db)):
+def mark_no_show(appointment_id: str, db: Session = Depends(get_db)):
     """Marca como falta"""
     
     appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
@@ -439,7 +439,7 @@ def list_waitlist(
 
 @waitlist_router.get("/{waitlist_id}", response_model=WaitlistResponse)
 def get_waitlist_entry(
-    waitlist_id: int,
+    waitlist_id: str,
     db: Session = Depends(get_db)
 ):
     """Busca uma entrada específica da lista de espera"""
@@ -459,7 +459,7 @@ def get_waitlist_entry(
 
 @waitlist_router.put("/{waitlist_id}", response_model=WaitlistResponse)
 def update_waitlist_entry(
-    waitlist_id: int,
+    waitlist_id: str,
     waitlist_data: WaitlistCreate,
     db: Session = Depends(get_db)
 ):
@@ -487,7 +487,7 @@ def update_waitlist_entry(
 
 @waitlist_router.delete("/{waitlist_id}")
 def delete_waitlist_entry(
-    waitlist_id: int,
+    waitlist_id: str,
     db: Session = Depends(get_db)
 ):
     """Remove uma entrada da lista de espera"""
@@ -513,7 +513,7 @@ def delete_waitlist_entry(
 
 @waitlist_router.post("/{waitlist_id}/notify")
 async def notify_waitlist_patient(
-    waitlist_id: int,
+    waitlist_id: str,
     method: ConfirmationMethod = Query(..., description="Método de notificação"),
     available_date: datetime = Query(..., description="Data/hora disponível"),
     db: Session = Depends(get_db)
@@ -585,7 +585,7 @@ def create_schedule(
 
 @schedule_router.get("/professional/{professional_id}", response_model=List[ScheduleResponse])
 def get_professional_schedule(
-    professional_id: int,
+    professional_id: str,
     db: Session = Depends(get_db)
 ):
     """Busca escala de um profissional"""
@@ -600,7 +600,7 @@ def get_professional_schedule(
 
 @schedule_router.get("/{schedule_id}", response_model=ScheduleResponse)
 def get_schedule(
-    schedule_id: int,
+    schedule_id: str,
     db: Session = Depends(get_db)
 ):
     """Busca uma escala específica"""
@@ -620,7 +620,7 @@ def get_schedule(
 
 @schedule_router.put("/{schedule_id}", response_model=ScheduleResponse)
 def update_schedule(
-    schedule_id: int,
+    schedule_id: str,
     schedule_data: ScheduleCreate,
     db: Session = Depends(get_db)
 ):
@@ -648,7 +648,7 @@ def update_schedule(
 
 @schedule_router.delete("/{schedule_id}")
 def delete_schedule(
-    schedule_id: int,
+    schedule_id: str,
     db: Session = Depends(get_db)
 ):
     """Remove uma escala"""
@@ -682,7 +682,7 @@ availability_router = APIRouter(prefix="/api/v1/availability", tags=["Disponibil
 
 @availability_router.get("/professional/{professional_id}")
 def get_available_slots(
-    professional_id: int,
+    professional_id: str,
     date_filter: date = Query(..., description="Data para verificar disponibilidade"),
     db: Session = Depends(get_db)
 ):
