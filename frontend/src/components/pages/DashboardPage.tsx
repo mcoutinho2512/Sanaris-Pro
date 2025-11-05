@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { financialService } from '@/services/financial.service';
 import type { FinancialSummary } from '@/types/financial';
 
 export function DashboardPage() {
   const [data, setData] = useState<FinancialSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     loadData();
@@ -90,16 +92,28 @@ export function DashboardPage() {
       <div className="bg-white p-6 rounded-lg shadow">
         <h3 className="text-lg font-semibold mb-4">Ações Rápidas</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <button className="p-4 border-2 border-blue-200 rounded-lg hover:bg-blue-50 transition">
+          <button 
+            onClick={() => router.push('/financeiro')}
+            className="p-4 border-2 border-blue-200 rounded-lg hover:bg-blue-50 transition"
+          >
             <p className="font-semibold">Nova Receita</p>
           </button>
-          <button className="p-4 border-2 border-red-200 rounded-lg hover:bg-red-50 transition">
+          <button 
+            onClick={() => router.push('/financeiro')}
+            className="p-4 border-2 border-red-200 rounded-lg hover:bg-red-50 transition"
+          >
             <p className="font-semibold">Nova Despesa</p>
           </button>
-          <button className="p-4 border-2 border-green-200 rounded-lg hover:bg-green-50 transition">
+          <button 
+            onClick={() => router.push('/pacientes')}
+            className="p-4 border-2 border-green-200 rounded-lg hover:bg-green-50 transition"
+          >
             <p className="font-semibold">Novo Paciente</p>
           </button>
-          <button className="p-4 border-2 border-purple-200 rounded-lg hover:bg-purple-50 transition">
+          <button 
+            onClick={() => router.push('/agenda')}
+            className="p-4 border-2 border-purple-200 rounded-lg hover:bg-purple-50 transition"
+          >
             <p className="font-semibold">Agendar</p>
           </button>
         </div>

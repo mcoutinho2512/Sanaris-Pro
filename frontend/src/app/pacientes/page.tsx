@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Search, Plus, Edit, Trash2, Eye, X } from 'lucide-react';
 import { patientsService, Patient } from '@/services/patients.service';
 import { PatientModal } from '@/components/patients/PatientModal';
@@ -12,10 +13,34 @@ export default function PacientesPage() {
   const [showModal, setShowModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     loadPatients();
   }, []);
+
+  // Detectar query params para abrir modal de detalhes
+  useEffect(() => {
+    const patientId = searchParams.get('id');
+    const action = searchParams.get('action');
+    
+    if (patientId && action === 'view') {
+      // Buscar paciente e abrir modal
+      const patient = patients.find(p => p.id === patientId);
+      if (patient) {
+        setSelectedPatient(patient);
+        setShowDetailsModal(true);
+      } else {
+        // Se não encontrou na lista, buscar da API
+        patientsService.get(patientId).then(patient => {
+          setSelectedPatient(patient);
+          setShowDetailsModal(true);
+        }).catch(error => {
+          console.error('Erro ao buscar paciente:', error);
+        });
+      }
+    }
+  }, [searchParams, patients]);
 
   const loadPatients = async () => {
     try {
