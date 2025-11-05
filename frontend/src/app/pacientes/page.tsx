@@ -1,14 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Search, Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Eye, X } from 'lucide-react';
 import { patientsService, Patient } from '@/services/patients.service';
+import { PatientModal } from '@/components/patients/PatientModal';
 
 export default function PacientesPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   useEffect(() => {
     loadPatients();
@@ -28,6 +31,36 @@ export default function PacientesPage() {
 
   const handleSearch = () => {
     loadPatients();
+  };
+
+  const handleNew = () => {
+    setSelectedPatient(null);
+    setShowModal(true);
+  };
+
+  const handleEdit = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setShowModal(true);
+  };
+
+  const handleDelete = async (patient: Patient) => {
+    if (!confirm(`Deseja realmente excluir o paciente ${patient.full_name}?`)) {
+      return;
+    }
+
+    try {
+      await patientsService.delete(patient.id);
+      alert('Paciente excluído com sucesso!');
+      loadPatients();
+    } catch (error: any) {
+      console.error('Erro ao excluir paciente:', error);
+      alert(error.response?.data?.detail || 'Erro ao excluir paciente');
+    }
+  };
+
+  const handleViewDetails = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setShowDetailsModal(true);
   };
 
   const formatDate = (dateString: string | null) => {
@@ -60,7 +93,7 @@ export default function PacientesPage() {
           <p className="text-gray-600 mt-1">{patients.length} paciente(s) cadastrado(s)</p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={handleNew}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
         >
           <Plus size={20} />
@@ -159,18 +192,21 @@ export default function PacientesPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-2">
                         <button
+                          onClick={() => handleViewDetails(patient)}
                           className="text-blue-600 hover:text-blue-900"
                           title="Ver detalhes"
                         >
                           <Eye size={18} />
                         </button>
                         <button
+                          onClick={() => handleEdit(patient)}
                           className="text-green-600 hover:text-green-900"
                           title="Editar"
                         >
                           <Edit size={18} />
                         </button>
                         <button
+                          onClick={() => handleDelete(patient)}
                           className="text-red-600 hover:text-red-900"
                           title="Excluir"
                         >
@@ -186,18 +222,70 @@ export default function PacientesPage() {
         </div>
       </div>
 
-      {/* Modal - Em desenvolvimento */}
-      {showModal && (
+      {/* Modal de Cadastro/Edição */}
+      <PatientModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSuccess={loadPatients}
+        patient={selectedPatient}
+      />
+
+      {/* Modal de Detalhes */}
+      {showDetailsModal && selectedPatient && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-            <h2 className="text-xl font-bold mb-4">Novo Paciente</h2>
-            <p className="text-gray-600 mb-4">Modal de cadastro em desenvolvimento...</p>
-            <button
-              onClick={() => setShowModal(false)}
-              className="bg-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300"
-            >
-              Fechar
-            </button>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Detalhes do Paciente</h2>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <span className="font-semibold">Nome:</span> {selectedPatient.full_name}
+              </div>
+              <div>
+                <span className="font-semibold">CPF:</span> {formatCPF(selectedPatient.cpf)}
+              </div>
+              <div>
+                <span className="font-semibold">Data de Nascimento:</span> {formatDate(selectedPatient.birth_date)}
+              </div>
+              <div>
+                <span className="font-semibold">Telefone:</span> {selectedPatient.phone || '-'}
+              </div>
+              <div>
+                <span className="font-semibold">Email:</span> {selectedPatient.email || '-'}
+              </div>
+              <div>
+                <span className="font-semibold">Status:</span>{' '}
+                <span
+                  className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                    selectedPatient.is_active
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                  }`}
+                >
+                  {selectedPatient.is_active ? 'Ativo' : 'Inativo'}
+                </span>
+              </div>
+              <div>
+                <span className="font-semibold">Cadastrado em:</span>{' '}
+                {new Date(selectedPatient.created_at).toLocaleString('pt-BR')}
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="bg-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300"
+              >
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       )}
