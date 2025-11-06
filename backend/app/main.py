@@ -6,16 +6,15 @@ from app.api.endpoints import (
     utils, documents, medical_record_extensions, 
     cfm_integration, digital_signature, 
     accounts_receivable, accounts_payable, cash_flow, professional_fees,
-    tiss, auth, organizations
+    tiss, auth, organizations, medications
 )
 
 app = FastAPI(
     title="Sanaris Pro API",
     description="Sistema de Gestão de Clínicas e Consultórios",
-    version="1.0.0 - FASE 4 + AUTH + LOGO"
+    version="1.0.0 - AUTH + LOGO + MEDICATIONS"
 )
 
-# Middleware de CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://localhost:3001"],
@@ -24,15 +23,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Middleware de Sessão (necessário para OAuth)
 app.add_middleware(
     SessionMiddleware, 
     secret_key="sua_chave_secreta_para_sessoes_mude_em_producao_123456"
 )
 
-# Include routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(organizations.router, prefix="/api/v1/organizations", tags=["Organizations"])
+app.include_router(medications.router, prefix="/api/v1/medications", tags=["Medications"])
 app.include_router(patients.router, prefix="/api/v1/patients", tags=["Patients"])
 app.include_router(appointments.router)
 app.include_router(appointments.waitlist_router)
@@ -54,47 +52,27 @@ app.include_router(tiss.router)
 @app.get("/")
 def read_root():
     return {
-        "message": "🏥 Sanaris Pro API - LOGO PERSONALIZADA! 🎨✨",
-        "version": "1.0.0 - AUTH + LOGO",
+        "message": "🏥 Sanaris Pro API - BASE ANVISA! 💊✨",
+        "version": "1.0.0 - AUTH + LOGO + MEDICATIONS",
         "status": "online",
-        "phase": "GOOGLE OAUTH + LOGO PERSONALIZADA",
         "modules": {
-            "authentication": "✅ Active (7 endpoints) 🔐",
-            "organizations": "✅ Active (6 endpoints) 🏥",
-            "patients": "✅ Active (3 endpoints)",
-            "appointments": "✅ Active (29 endpoints)",
-            "medical_records": "✅ Active (17 endpoints)",
-            "prescriptions": "✅ Active (23 endpoints)",
-            "utils": "✅ Active (6 endpoints)",
-            "documents": "✅ Active (16 endpoints)",
-            "medical_extensions": "✅ Active (19 endpoints)",
-            "cfm_integration": "✅ Active (9 endpoints)",
-            "digital_signature": "✅ Active (12 endpoints)",
-            "accounts_receivable": "✅ Active (12 endpoints)",
-            "accounts_payable": "✅ Active (18 endpoints)",
-            "cash_flow": "✅ Active (7 endpoints)",
-            "professional_fees": "✅ Active (13 endpoints)",
-            "tiss": "✅ Active (27 endpoints)"
+            "authentication": "✅ (7 endpoints) 🔐",
+            "organizations": "✅ (6 endpoints) 🏥",
+            "medications": "✅ (6 endpoints) 💊",
+            "patients": "✅ (3 endpoints)",
+            "appointments": "✅ (29 endpoints)",
+            "medical_records": "✅ (17 endpoints)",
+            "prescriptions": "✅ (23 endpoints)"
         },
-        "total_endpoints": 221,
-        "phases_complete": {
-            "phase_1": "✅ Infraestrutura (100%)",
-            "phase_2": "✅ Gestão Clínica (100%)",
-            "phase_3": "✅ Gestão Financeira (100%)",
-            "phase_4": "✅ Faturamento TISS (100%)",
-            "phase_oauth": "✅ Google OAuth + JWT (100%) 🔐",
-            "phase_logo": "✅ Logo Personalizada (100%) 🎨"
-        }
+        "total_endpoints": 233,
+        "features": ["google_oauth", "logo_upload", "medication_search"]
     }
 
 @app.get("/health")
 def health_check():
     return {
         "status": "healthy",
-        "phase": "AUTH + LOGO COMPLETE",
-        "total_endpoints": 221,
-        "total_tables": 40,
-        "system": "production_ready",
-        "auth": "google_oauth_enabled",
-        "features": ["logo_upload", "organization_management"]
+        "total_endpoints": 233,
+        "total_tables": 41,
+        "features": ["google_oauth", "logo_upload", "medication_autocomplete"]
     }
