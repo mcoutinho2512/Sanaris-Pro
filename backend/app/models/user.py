@@ -1,5 +1,6 @@
-from sqlalchemy import Column, String, Boolean, DateTime, Text
+from sqlalchemy import Column, String, Boolean, DateTime, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from app.core.database import Base
 from datetime import datetime
 import uuid
@@ -8,6 +9,9 @@ class User(Base):
     __tablename__ = "users"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    
+    # Organização
+    organization_id = Column(UUID(as_uuid=True), ForeignKey('organizations.id'), nullable=True)
     
     # Dados básicos
     email = Column(String(255), unique=True, index=True, nullable=False)
@@ -34,6 +38,9 @@ class User(Base):
     
     # Soft delete
     deleted_at = Column(DateTime, nullable=True)
+    
+    # Relacionamentos
+    organization = relationship("Organization", backref="users")
     
     def __repr__(self):
         return f"<User {self.email}>"

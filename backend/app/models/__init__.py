@@ -5,6 +5,7 @@ from app.models.document import DocumentTemplate, PatientDocument, QuickPatientR
 from app.models.financial import AccountReceivable, PaymentInstallment, PaymentTransaction, Supplier, ExpenseCategory, CostCenter, AccountPayable, PayableTransaction, ProfessionalFeeConfiguration, ProfessionalFee, ProfessionalFeeItem
 from app.models.medical_record import MedicalRecord, VitalSigns, MedicalRecordAttachment
 from app.models.medical_record_template import MedicalRecordTemplate, ExamResult, PhotoEvolution
+from app.models.organization import Organization
 from app.models.patient import Patient
 from app.models.prescription import Prescription, PrescriptionItem, PrescriptionTemplate
 from app.models.tiss import HealthInsuranceOperator, TussProcedure, Beneficiary, TissBatch, TissGuide, TissGuideProcedure
@@ -39,6 +40,7 @@ __all__ = [
     "MedicalRecordTemplate",
     "ExamResult",
     "PhotoEvolution",
+    "Organization",
     "Patient",
     "Prescription",
     "PrescriptionItem",
