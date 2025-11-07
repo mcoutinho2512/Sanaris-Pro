@@ -6,7 +6,7 @@ from app.api.endpoints import (
     utils, documents, medical_record_extensions, 
     cfm_integration, digital_signature, 
     accounts_receivable, accounts_payable, cash_flow, professional_fees,
-    tiss, auth, organizations, medications, notifications, google_calendar
+    tiss, auth, organizations, medications, notifications, google_calendar, cfm_test
 )
 
 app = FastAPI(
@@ -50,6 +50,7 @@ app.include_router(accounts_payable.router)
 app.include_router(cash_flow.router)
 app.include_router(professional_fees.router)
 app.include_router(tiss.router)
+app.include_router(cfm_test.router, prefix="/api/v1/cfm", tags=["CFM Test"])
 
 @app.get("/")
 def read_root():
