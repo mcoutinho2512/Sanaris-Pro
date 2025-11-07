@@ -6,7 +6,7 @@ from app.api.endpoints import (
     utils, documents, medical_record_extensions, 
     cfm_integration, digital_signature, 
     accounts_receivable, accounts_payable, cash_flow, professional_fees,
-    tiss, auth, organizations, medications, notifications, google_calendar, cfm_test
+    tiss, auth, organizations, medications, notifications, google_calendar, cfm_test, statistics
 )
 
 app = FastAPI(
@@ -51,6 +51,7 @@ app.include_router(cash_flow.router)
 app.include_router(professional_fees.router)
 app.include_router(tiss.router)
 app.include_router(cfm_test.router, prefix="/api/v1/cfm", tags=["CFM Test"])
+app.include_router(statistics.router, prefix="/api/v1/statistics", tags=["Statistics"])
 
 @app.get("/")
 def read_root():
@@ -67,7 +68,7 @@ def read_root():
             "patients": "✅ (3 endpoints)",
             "appointments": "✅ (29 endpoints)"
         },
-        "total_endpoints": 240,
+        "total_endpoints": 244,
         "features": ["google_oauth", "logo_upload", "medication_search", "notifications", "calendar_sync"]
     }
 
@@ -75,7 +76,7 @@ def read_root():
 def health_check():
     return {
         "status": "healthy",
-        "total_endpoints": 240,
+        "total_endpoints": 244,
         "total_tables": 42,
         "features": ["google_oauth", "logo_upload", "medication_autocomplete", "notifications", "calendar_integration"]
     }
