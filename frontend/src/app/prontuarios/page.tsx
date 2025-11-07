@@ -11,10 +11,91 @@ export default function ProntuariosPage() {
   const [loading, setLoading] = useState(true);
   const [selectedRecord, setSelectedRecord] = useState<MedicalRecord | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<MedicalRecord | null>(null);
+  const [formData, setFormData] = useState({
+    patient_id: '',
+    chief_complaint: '',
+    history_of_present_illness: '',
+    past_medical_history: '',
+    medications: '',
+    allergies: '',
+    diagnosis: '',
+    treatment_plan: '',
+    prescriptions: '',
+    exams_requested: '',
+    observations: '',
+  });
 
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleNew = () => {
+    setEditingRecord(null);
+    setFormData({
+      patient_id: '',
+      chief_complaint: '',
+      history_of_present_illness: '',
+      past_medical_history: '',
+      medications: '',
+      allergies: '',
+      diagnosis: '',
+      treatment_plan: '',
+      prescriptions: '',
+      exams_requested: '',
+      observations: '',
+    });
+    setShowFormModal(true);
+  };
+
+  const handleEdit = (record: MedicalRecord) => {
+    setEditingRecord(record);
+    setFormData({
+      patient_id: record.patient_id,
+      chief_complaint: record.chief_complaint || '',
+      history_of_present_illness: record.history_of_present_illness || '',
+      past_medical_history: record.past_medical_history || '',
+      medications: record.medications || '',
+      allergies: record.allergies || '',
+      diagnosis: record.diagnosis || '',
+      treatment_plan: record.treatment_plan || '',
+      prescriptions: record.prescriptions || '',
+      exams_requested: record.exams_requested || '',
+      observations: record.observations || '',
+    });
+    setShowFormModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.patient_id) {
+      alert('Selecione um paciente');
+      return;
+    }
+
+    try {
+      if (editingRecord) {
+        // Editar
+        await medicalRecordsService.update(editingRecord.id, formData);
+        alert('Prontuário atualizado!');
+      } else {
+        // Criar novo
+        await medicalRecordsService.create({
+          ...formData,
+          healthcare_professional_id: 'doctor-001',
+        });
+        alert('Prontuário criado!');
+      }
+      
+      setShowFormModal(false);
+      loadData();
+    } catch (error: any) {
+      console.error('Erro ao salvar:', error);
+      alert(error.response?.data?.detail || 'Erro ao salvar prontuário');
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -97,7 +178,7 @@ export default function ProntuariosPage() {
           <p className="text-gray-600 mt-1">{records.length} prontuário(s)</p>
         </div>
         <button
-          onClick={() => alert('Formulário de novo prontuário em desenvolvimento')}
+          onClick={handleNew}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
         >
           <Plus size={20} />
@@ -171,7 +252,7 @@ export default function ProntuariosPage() {
                     </button>
                     {!record.is_locked && (
                       <button
-                        onClick={() => alert('Edição em desenvolvimento')}
+                        onClick={() => handleEdit(record)}
                         className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center gap-2"
                         title="Editar"
                       >
@@ -186,6 +267,184 @@ export default function ProntuariosPage() {
           })
         )}
       </div>
+
+      {/* Modal de Formulário */}
+      {showFormModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-center">
+              <h2 className="text-xl font-bold">
+                {editingRecord ? 'Editar Prontuário' : 'Novo Prontuário'}
+              </h2>
+              <button
+                onClick={() => setShowFormModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+              {/* Paciente */}
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Paciente *
+                </label>
+                <select
+                  value={formData.patient_id}
+                  onChange={(e) => setFormData({...formData, patient_id: e.target.value})}
+                  className="w-full border rounded-lg p-2"
+                  required
+                  disabled={!!editingRecord}
+                >
+                  <option value="">Selecione um paciente</option>
+                  {Object.values(patients).map(patient => (
+                    <option key={patient.id} value={patient.id}>
+                      {patient.full_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Queixa Principal */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Queixa Principal</label>
+                <input
+                  type="text"
+                  value={formData.chief_complaint}
+                  onChange={(e) => setFormData({...formData, chief_complaint: e.target.value})}
+                  className="w-full border rounded-lg p-2"
+                  placeholder="Ex: Dor de cabeça intensa"
+                />
+              </div>
+
+              {/* História da Doença Atual */}
+              <div>
+                <label className="block text-sm font-medium mb-1">História da Doença Atual (HDA)</label>
+                <textarea
+                  value={formData.history_of_present_illness}
+                  onChange={(e) => setFormData({...formData, history_of_present_illness: e.target.value})}
+                  className="w-full border rounded-lg p-2"
+                  rows={3}
+                  placeholder="Descreva a história da doença..."
+                />
+              </div>
+
+              {/* História Pregressa */}
+              <div>
+                <label className="block text-sm font-medium mb-1">História Patológica Pregressa</label>
+                <textarea
+                  value={formData.past_medical_history}
+                  onChange={(e) => setFormData({...formData, past_medical_history: e.target.value})}
+                  className="w-full border rounded-lg p-2"
+                  rows={2}
+                  placeholder="Doenças anteriores, cirurgias..."
+                />
+              </div>
+
+              {/* Medicamentos */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Medicamentos em Uso</label>
+                <textarea
+                  value={formData.medications}
+                  onChange={(e) => setFormData({...formData, medications: e.target.value})}
+                  className="w-full border rounded-lg p-2"
+                  rows={2}
+                  placeholder="Liste os medicamentos em uso..."
+                />
+              </div>
+
+              {/* Alergias */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Alergias</label>
+                <input
+                  type="text"
+                  value={formData.allergies}
+                  onChange={(e) => setFormData({...formData, allergies: e.target.value})}
+                  className="w-full border rounded-lg p-2"
+                  placeholder="Ex: Dipirona, Penicilina"
+                />
+              </div>
+
+              {/* Diagnóstico */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Diagnóstico</label>
+                <input
+                  type="text"
+                  value={formData.diagnosis}
+                  onChange={(e) => setFormData({...formData, diagnosis: e.target.value})}
+                  className="w-full border rounded-lg p-2"
+                  placeholder="Ex: Enxaqueca com aura"
+                />
+              </div>
+
+              {/* Plano de Tratamento */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Plano de Tratamento</label>
+                <textarea
+                  value={formData.treatment_plan}
+                  onChange={(e) => setFormData({...formData, treatment_plan: e.target.value})}
+                  className="w-full border rounded-lg p-2"
+                  rows={3}
+                  placeholder="Descreva o plano de tratamento..."
+                />
+              </div>
+
+              {/* Prescrições */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Prescrições</label>
+                <textarea
+                  value={formData.prescriptions}
+                  onChange={(e) => setFormData({...formData, prescriptions: e.target.value})}
+                  className="w-full border rounded-lg p-2"
+                  rows={3}
+                  placeholder="Liste os medicamentos prescritos..."
+                />
+              </div>
+
+              {/* Exames Solicitados */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Exames Solicitados</label>
+                <textarea
+                  value={formData.exams_requested}
+                  onChange={(e) => setFormData({...formData, exams_requested: e.target.value})}
+                  className="w-full border rounded-lg p-2"
+                  rows={2}
+                  placeholder="Liste os exames solicitados..."
+                />
+              </div>
+
+              {/* Observações */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Observações</label>
+                <textarea
+                  value={formData.observations}
+                  onChange={(e) => setFormData({...formData, observations: e.target.value})}
+                  className="w-full border rounded-lg p-2"
+                  rows={2}
+                  placeholder="Observações adicionais..."
+                />
+              </div>
+            </form>
+
+            <div className="sticky bottom-0 bg-gray-50 border-t p-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowFormModal(false)}
+                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                {editingRecord ? 'Salvar Alterações' : 'Criar Prontuário'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Detalhes */}
       {showDetailsModal && selectedRecord && (

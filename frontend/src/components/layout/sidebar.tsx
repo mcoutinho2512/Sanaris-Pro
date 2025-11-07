@@ -1,5 +1,4 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -12,6 +11,7 @@ import {
   Receipt,
   Settings,
   BarChart3,
+  Stethoscope,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +21,7 @@ const menuItems = [
   { href: "/agenda", label: "Agenda", icon: Calendar },
   { href: "/prontuarios", label: "Prontuários", icon: FileText },
   { href: "/prescricoes", label: "Prescrições", icon: Pill },
+  { href: "/cfm", label: "CFM", icon: Stethoscope },
   { href: "/financeiro", label: "Financeiro", icon: DollarSign },
   { href: "/faturamento-tiss", label: "Faturamento TISS", icon: Receipt },
   { href: "/relatorios", label: "Relatórios", icon: BarChart3 },
@@ -42,7 +43,7 @@ export function Sidebar() {
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
-
+          
           return (
             <Link
               key={item.href}
