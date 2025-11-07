@@ -6,6 +6,7 @@ from app.models.financial import AccountReceivable, PaymentInstallment, PaymentT
 from app.models.medical_record import MedicalRecord, VitalSigns, MedicalRecordAttachment
 from app.models.medical_record_template import MedicalRecordTemplate, ExamResult, PhotoEvolution
 from app.models.medication import Medication
+from app.models.notification import Notification
 from app.models.organization import Organization
 from app.models.patient import Patient
 from app.models.prescription import Prescription, PrescriptionItem, PrescriptionTemplate
@@ -42,6 +43,7 @@ __all__ = [
     "ExamResult",
     "PhotoEvolution",
     "Medication",
+    "Notification",
     "Organization",
     "Patient",
     "Prescription",

@@ -6,13 +6,13 @@ from app.api.endpoints import (
     utils, documents, medical_record_extensions, 
     cfm_integration, digital_signature, 
     accounts_receivable, accounts_payable, cash_flow, professional_fees,
-    tiss, auth, organizations, medications
+    tiss, auth, organizations, medications, notifications
 )
 
 app = FastAPI(
     title="Sanaris Pro API",
     description="Sistema de Gestão de Clínicas e Consultórios",
-    version="1.0.0 - AUTH + LOGO + MEDICATIONS"
+    version="1.0.0 - FULL NOTIFICATIONS"
 )
 
 app.add_middleware(
@@ -31,6 +31,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(organizations.router, prefix="/api/v1/organizations", tags=["Organizations"])
 app.include_router(medications.router, prefix="/api/v1/medications", tags=["Medications"])
+app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["Notifications"])
 app.include_router(patients.router, prefix="/api/v1/patients", tags=["Patients"])
 app.include_router(appointments.router)
 app.include_router(appointments.waitlist_router)
@@ -52,27 +53,26 @@ app.include_router(tiss.router)
 @app.get("/")
 def read_root():
     return {
-        "message": "🏥 Sanaris Pro API - BASE ANVISA! 💊✨",
-        "version": "1.0.0 - AUTH + LOGO + MEDICATIONS",
+        "message": "🏥 Sanaris Pro API - NOTIFICAÇÕES ATIVAS! 📧💬📱✨",
+        "version": "1.0.0 - FULL NOTIFICATIONS",
         "status": "online",
         "modules": {
             "authentication": "✅ (7 endpoints) 🔐",
             "organizations": "✅ (6 endpoints) 🏥",
             "medications": "✅ (6 endpoints) 💊",
+            "notifications": "✅ (4 endpoints) 📧💬📱",
             "patients": "✅ (3 endpoints)",
-            "appointments": "✅ (29 endpoints)",
-            "medical_records": "✅ (17 endpoints)",
-            "prescriptions": "✅ (23 endpoints)"
+            "appointments": "✅ (29 endpoints)"
         },
-        "total_endpoints": 233,
-        "features": ["google_oauth", "logo_upload", "medication_search"]
+        "total_endpoints": 237,
+        "features": ["google_oauth", "logo_upload", "medication_search", "email_sms_whatsapp"]
     }
 
 @app.get("/health")
 def health_check():
     return {
         "status": "healthy",
-        "total_endpoints": 233,
-        "total_tables": 41,
-        "features": ["google_oauth", "logo_upload", "medication_autocomplete"]
+        "total_endpoints": 237,
+        "total_tables": 42,
+        "features": ["google_oauth", "logo_upload", "medication_autocomplete", "notifications"]
     }
