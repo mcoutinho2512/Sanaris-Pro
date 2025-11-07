@@ -6,13 +6,13 @@ from app.api.endpoints import (
     utils, documents, medical_record_extensions, 
     cfm_integration, digital_signature, 
     accounts_receivable, accounts_payable, cash_flow, professional_fees,
-    tiss, auth, organizations, medications, notifications
+    tiss, auth, organizations, medications, notifications, google_calendar
 )
 
 app = FastAPI(
     title="Sanaris Pro API",
     description="Sistema de Gestão de Clínicas e Consultórios",
-    version="1.0.0 - FULL NOTIFICATIONS"
+    version="1.0.0 - GOOGLE CALENDAR"
 )
 
 app.add_middleware(
@@ -32,6 +32,7 @@ app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(organizations.router, prefix="/api/v1/organizations", tags=["Organizations"])
 app.include_router(medications.router, prefix="/api/v1/medications", tags=["Medications"])
 app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["Notifications"])
+app.include_router(google_calendar.router, prefix="/api/v1/calendar", tags=["Google Calendar"])
 app.include_router(patients.router, prefix="/api/v1/patients", tags=["Patients"])
 app.include_router(appointments.router)
 app.include_router(appointments.waitlist_router)
@@ -53,26 +54,27 @@ app.include_router(tiss.router)
 @app.get("/")
 def read_root():
     return {
-        "message": "🏥 Sanaris Pro API - NOTIFICAÇÕES ATIVAS! 📧💬📱✨",
-        "version": "1.0.0 - FULL NOTIFICATIONS",
+        "message": "🏥 Sanaris Pro API - GOOGLE CALENDAR! 📅✨",
+        "version": "1.0.0 - GOOGLE CALENDAR INTEGRATION",
         "status": "online",
         "modules": {
             "authentication": "✅ (7 endpoints) 🔐",
             "organizations": "✅ (6 endpoints) 🏥",
             "medications": "✅ (6 endpoints) 💊",
             "notifications": "✅ (4 endpoints) 📧💬📱",
+            "google_calendar": "✅ (3 endpoints) 📅",
             "patients": "✅ (3 endpoints)",
             "appointments": "✅ (29 endpoints)"
         },
-        "total_endpoints": 237,
-        "features": ["google_oauth", "logo_upload", "medication_search", "email_sms_whatsapp"]
+        "total_endpoints": 240,
+        "features": ["google_oauth", "logo_upload", "medication_search", "notifications", "calendar_sync"]
     }
 
 @app.get("/health")
 def health_check():
     return {
         "status": "healthy",
-        "total_endpoints": 237,
+        "total_endpoints": 240,
         "total_tables": 42,
-        "features": ["google_oauth", "logo_upload", "medication_autocomplete", "notifications"]
+        "features": ["google_oauth", "logo_upload", "medication_autocomplete", "notifications", "calendar_integration"]
     }
