@@ -3,22 +3,17 @@ from typing import Optional
 from datetime import datetime
 from uuid import UUID
 
-# Token schemas
-class Token(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-
 class TokenData(BaseModel):
     email: Optional[str] = None
     user_id: Optional[UUID] = None
 
-# User schemas
 class UserBase(BaseModel):
     email: EmailStr
     full_name: str
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=6)
+    role: Optional[str] = "user"
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
@@ -31,6 +26,7 @@ class UserInDB(UserBase):
     is_active: bool
     is_superuser: bool
     email_verified: bool
+    role: str
     created_at: datetime
     last_login: Optional[datetime] = None
     
@@ -40,7 +36,10 @@ class UserInDB(UserBase):
 class UserResponse(UserInDB):
     pass
 
-# Login schemas
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str

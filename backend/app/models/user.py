@@ -28,6 +28,7 @@ class User(Base):
     
     # Status
     is_active = Column(Boolean, default=True)
+    role = Column(String(20), default="user")
     is_superuser = Column(Boolean, default=False)
     email_verified = Column(Boolean, default=False)
     
