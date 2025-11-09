@@ -1,0 +1,70 @@
+Aqui vai um “guia de bolso” para os cenários do dia a dia:
+
+Fluxo padrão (sem surpresas)
+git checkout main
+git pull --rebase origin main   # traz o que tem no GitHub
+git add .                       # prepara arquivos modificados/novos
+git commit -m "feat: sua mensagem"
+git push origin main
+
+Se o pull --rebase reclamar de mudanças não preparadas
+
+Você tem 3 opções. Escolha 1:
+
+Adicionar e comitar antes de puxar (mais comum)
+
+git add .
+git commit -m "chore: WIP antes do pull"
+git pull --rebase origin main
+
+
+Stash (guardar temporariamente), puxar e restaurar
+
+git stash push -u -m "WIP antes do pull"   # -u inclui untracked
+git pull --rebase origin main
+git stash pop
+
+
+Descartar mudanças locais (cuidado! perde alterações não comitadas)
+
+git restore --staged :/
+git restore .          # volta tudo ao último commit
+git pull --rebase origin main
+
+Dicas úteis
+
+Adicionar só partes do arquivo (commits mais limpos):
+
+git add -p
+
+
+Ver diferenças:
+
+git diff            # o que mudou no working dir
+git diff --staged   # o que vai no próximo commit
+
+
+Ajustar a mensagem do último commit (se ainda não fez push):
+
+git commit --amend
+
+
+Desfazer o último commit mantendo arquivos no stage:
+
+git reset --soft HEAD~1
+
+
+Reverter um commit já publicado:
+
+git revert <hash>
+
+Configurações que ajudam (uma vez só)
+# Padrão: sempre usar rebase no pull (histórico mais linear)
+git config --global pull.rebase true
+
+# Sempre mostrar status curto e branch no prompt (se usar zsh/bash com git-prompt)
+git config --global status.short true
+
+# Nome/E-mail globais (se ainda não fez)
+git config --global user.name "Magnun Coutinho"
+git config --global user.email "mcoutinho2512@users.noreply.github.com"

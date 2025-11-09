@@ -707,3 +707,182 @@ async def websocket_endpoint(
                 
     except WebSocketDisconnect:
         manager.disconnect(websocket, user_id)
+
+# ========== NOVOS ENDPOINTS ==========
+
+@router.delete("/channels/{channel_id}")
+def delete_channel(
+    channel_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Excluir canal (apenas criador ou admin)"""
+    
+    channel = db.query(ChatChannel).filter(ChatChannel.id == channel_id).first()
+    
+    if not channel:
+        raise HTTPException(status_code=404, detail="Canal não encontrado")
+    
+    # Verificar permissão
+    if channel.created_by_id != current_user.id and current_user.role != 'admin':
+        raise HTTPException(status_code=403, detail="Sem permissão para excluir este canal")
+    
+    # Soft delete
+    from datetime import datetime
+    channel.is_active = False
+    db.commit()
+    
+    return {"message": "Canal excluído com sucesso"}
+
+
+@router.post("/channels/{channel_id}/participants")
+def add_participant(
+    channel_id: UUID,
+    user_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Adicionar participante ao canal"""
+    
+    channel = db.query(ChatChannel).filter(ChatChannel.id == channel_id).first()
+    
+    if not channel:
+        raise HTTPException(status_code=404, detail="Canal não encontrado")
+    
+    # Verificar se usuário existe
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    
+    # Verificar se já é participante
+    existing = db.query(ChatParticipant).filter(
+        ChatParticipant.channel_id == channel_id,
+        ChatParticipant.user_id == user_id
+    ).first()
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Usuário já é participante")
+    
+    # Adicionar participante
+    participant = ChatParticipant(
+        channel_id=channel_id,
+        user_id=user_id,
+        role='member'
+    )
+    db.add(participant)
+    
+    # Criar mensagem de sistema
+    system_msg = ChatMessage(
+        channel_id=channel_id,
+        sender_id=current_user.id,
+        content=f"{user.full_name} foi adicionado(a) ao canal",
+        message_type='system'
+    )
+    db.add(system_msg)
+    
+    db.commit()
+    
+    return {"message": "Participante adicionado com sucesso"}
+
+
+@router.delete("/channels/{channel_id}/participants/{user_id}")
+def remove_participant(
+    channel_id: UUID,
+    user_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Remover participante do canal"""
+    
+    channel = db.query(ChatChannel).filter(ChatChannel.id == channel_id).first()
+    
+    if not channel:
+        raise HTTPException(status_code=404, detail="Canal não encontrado")
+    
+    # Verificar permissão (criador ou o próprio usuário pode sair)
+    if channel.created_by_id != current_user.id and user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Sem permissão")
+    
+    # Remover participante
+    participant = db.query(ChatParticipant).filter(
+        ChatParticipant.channel_id == channel_id,
+        ChatParticipant.user_id == user_id
+    ).first()
+    
+    if not participant:
+        raise HTTPException(status_code=404, detail="Participante não encontrado")
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    
+    db.delete(participant)
+    
+    # Criar mensagem de sistema
+    system_msg = ChatMessage(
+        channel_id=channel_id,
+        sender_id=current_user.id,
+        content=f"{user.full_name} saiu do canal",
+        message_type='system'
+    )
+    db.add(system_msg)
+    
+    db.commit()
+    
+    return {"message": "Participante removido com sucesso"}
+
+
+@router.get("/channels/{channel_id}/participants")
+def list_participants(
+    channel_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Listar participantes do canal"""
+    
+    participants = db.query(ChatParticipant).filter(
+        ChatParticipant.channel_id == channel_id
+    ).all()
+    
+    result = []
+    for p in participants:
+        user = db.query(User).filter(User.id == p.user_id).first()
+        if user:
+            result.append({
+                "id": str(user.id),
+                "full_name": user.full_name,
+                "email": user.email,
+                "role": p.role,
+                "joined_at": p.joined_at.isoformat()
+            })
+    
+    return result
+
+@router.get("/channels/{channel_id}/files")
+def list_channel_files(
+    channel_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Listar todos os arquivos de um canal"""
+    
+    # Buscar mensagens com arquivos
+    messages = db.query(ChatMessage).filter(
+        ChatMessage.channel_id == channel_id,
+        ChatMessage.message_type.in_(['file', 'image'])
+    ).order_by(ChatMessage.created_at.desc()).all()
+    
+    files = []
+    for msg in messages:
+        if msg.file_url:
+            files.append({
+                "id": str(msg.id),
+                "file_name": msg.file_name or "Arquivo",
+                "file_url": msg.file_url,
+                "message_type": msg.message_type,
+                "created_at": msg.created_at.isoformat(),
+                "sender": {
+                    "id": str(msg.sender.id),
+                    "full_name": msg.sender.full_name
+                }
+            })
+    
+    return files

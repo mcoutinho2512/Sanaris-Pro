@@ -1,7 +1,8 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-from app.api.endpoints import chat, users_simple, users_management
+from app.api.endpoints import chat, users_simple, users_management, file_upload, file_download
 from app.api.endpoints import (
     patients, appointments, medical_records, prescriptions, 
     utils, documents, medical_record_extensions, 
@@ -55,6 +56,8 @@ app.include_router(cfm_test.router, prefix="/api/v1/cfm", tags=["CFM Test"])
 app.include_router(statistics.router, prefix="/api/v1/statistics", tags=["Statistics"])
 app.include_router(signatures.router, prefix="/api/v1/signatures", tags=["Signatures"])
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
+app.include_router(file_upload.router, prefix="/api/files", tags=["File Upload"])
+app.include_router(file_download.router, prefix="/api/files", tags=["File Download"])
 app.include_router(users_simple.router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(users_management.router, prefix="/api/v1/users-management", tags=["Users Management"])
 
