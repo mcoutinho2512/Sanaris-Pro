@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Building2, Plus, Edit, Trash2, Save, X, Lock, Eye, EyeOff } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Building2, Plus, Edit, Trash2, Save, X, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 interface Organization {
   id: string;
@@ -24,6 +25,7 @@ export default function OrganizationsPage() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Estados da página
+  const router = useRouter();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
@@ -328,6 +330,16 @@ export default function OrganizationsPage() {
   // PÁGINA DE ORGANIZAÇÕES (resto do código permanece igual)
   return (
     <div className="p-6">
+      <div className="mb-4">
+        <button
+          onClick={() => router.push('/')}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Voltar ao Sistema</span>
+        </button>
+      </div>
+
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Building2 className="w-8 h-8 text-blue-600" />

@@ -33,6 +33,8 @@ class User(Base):
     email_verified = Column(Boolean, default=False)
     
     # Timestamps
+    crm = Column(String, nullable=True)
+    specialty = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     last_login = Column(DateTime, nullable=True)
