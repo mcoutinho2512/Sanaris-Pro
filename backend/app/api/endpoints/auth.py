@@ -121,7 +121,11 @@ async def login(
         expires_delta=access_token_expires
     )
     
-    return {"access_token": access_token, "token_type": "bearer"}
+    return Token(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user)
+    )
 
 
 @router.post("/login/json", response_model=Token)
@@ -165,7 +169,11 @@ async def login_json(
         expires_delta=access_token_expires
     )
     
-    return {"access_token": access_token, "token_type": "bearer"}
+    return Token(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user)
+    )
 
 
 # ============================================================
@@ -281,3 +289,20 @@ async def logout(
         db.commit()
     
     return {"message": "Logged out successfully"}
+
+
+@router.get("/users", response_model=list[UserResponse])
+async def list_users(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Listar todos os usuários (apenas admin)"""
+    
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas administradores podem listar usuários"
+        )
+    
+    users = db.query(User).all()
+    return users

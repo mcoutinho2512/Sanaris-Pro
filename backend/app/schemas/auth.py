@@ -24,8 +24,8 @@ class UserInDB(UserBase):
     google_id: Optional[str] = None
     picture: Optional[str] = None
     is_active: bool
-    is_superuser: bool
-    email_verified: bool
+    is_superuser: Optional[bool] = False
+    email_verified: Optional[bool] = False
     role: str
     created_at: datetime
     last_login: Optional[datetime] = None
@@ -39,6 +39,7 @@ class UserResponse(UserInDB):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    user: Optional[UserResponse] = None
 
 class LoginRequest(BaseModel):
     email: EmailStr

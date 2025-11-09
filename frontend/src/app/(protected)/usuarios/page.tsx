@@ -16,6 +16,7 @@ export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [error, setError] = useState('');
   const [newUser, setNewUser] = useState({
     email: '',
     full_name: '',
@@ -30,18 +31,31 @@ export default function UsuariosPage() {
   const carregarUsuarios = async () => {
     try {
       const token = localStorage.getItem('access_token');
+      
+      if (!token) {
+        setError('Token não encontrado. Faça login novamente.');
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch('http://localhost:8888/api/v1/auth/users', {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
       
       if (response.ok) {
         const data = await response.json();
         setUsuarios(data);
+        setError('');
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Erro ao carregar usuários');
       }
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
+      setError('Erro de conexão com o servidor');
     } finally {
       setLoading(false);
     }
@@ -65,9 +79,13 @@ export default function UsuariosPage() {
         setShowModal(false);
         setNewUser({ email: '', full_name: '', password: '', role: 'user' });
         carregarUsuarios();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.detail || 'Erro ao criar usuário');
       }
     } catch (error) {
       console.error('Erro ao criar usuário:', error);
+      alert('Erro de conexão com o servidor');
     }
   };
 
@@ -86,6 +104,12 @@ export default function UsuariosPage() {
           Novo Usuário
         </button>
       </div>
+
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
+          {error}
+        </div>
+      )}
 
       {/* Tabela de Usuários */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
