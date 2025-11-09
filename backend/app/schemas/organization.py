@@ -1,19 +1,16 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
 
-
 class OrganizationBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
-    trade_name: Optional[str] = None
-    cnpj: Optional[str] = None
-    state_registration: Optional[str] = None
-    municipal_registration: Optional[str] = None
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = None
-    mobile: Optional[str] = None
-    website: Optional[str] = None
+    trade_name: Optional[str] = Field(None, max_length=255)
+    cnpj: Optional[str] = Field(None, max_length=18)
+    email: Optional[str] = Field(None, max_length=255)
+    phone: Optional[str] = Field(None, max_length=20)
+    mobile: Optional[str] = Field(None, max_length=20)
+    website: Optional[str] = Field(None, max_length=255)
     
     # Endereço
     address_street: Optional[str] = None
@@ -21,38 +18,29 @@ class OrganizationBase(BaseModel):
     address_complement: Optional[str] = None
     address_neighborhood: Optional[str] = None
     address_city: Optional[str] = None
-    address_state: Optional[str] = None
-    address_zipcode: Optional[str] = None
+    address_state: Optional[str] = Field(None, max_length=2)
+    address_zipcode: Optional[str] = Field(None, max_length=10)
     
     # Identidade visual
     logo_url: Optional[str] = None
-    logo_small_url: Optional[str] = None
-    primary_color: Optional[str] = None
-    secondary_color: Optional[str] = None
-    
-    # Textos personalizados
-    header_text: Optional[str] = None
-    footer_text: Optional[str] = None
+    primary_color: Optional[str] = Field(None, max_length=7)
+    secondary_color: Optional[str] = Field(None, max_length=7)
     
     # Configurações
-    allow_multiple_users: bool = True
-    max_users: int = 10
-
+    is_active: bool = True
+    max_users: int = Field(default=10, ge=1)
 
 class OrganizationCreate(OrganizationBase):
     pass
 
-
 class OrganizationUpdate(BaseModel):
-    name: Optional[str] = None
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
     trade_name: Optional[str] = None
     cnpj: Optional[str] = None
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     phone: Optional[str] = None
     mobile: Optional[str] = None
     website: Optional[str] = None
-    
-    # Endereço
     address_street: Optional[str] = None
     address_number: Optional[str] = None
     address_complement: Optional[str] = None
@@ -60,28 +48,25 @@ class OrganizationUpdate(BaseModel):
     address_city: Optional[str] = None
     address_state: Optional[str] = None
     address_zipcode: Optional[str] = None
-    
-    # Identidade visual
     logo_url: Optional[str] = None
-    logo_small_url: Optional[str] = None
     primary_color: Optional[str] = None
     secondary_color: Optional[str] = None
-    
-    # Textos personalizados
-    header_text: Optional[str] = None
-    footer_text: Optional[str] = None
-
+    is_active: Optional[bool] = None
+    max_users: Optional[int] = None
 
 class OrganizationResponse(OrganizationBase):
     id: UUID
-    is_active: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: Optional[datetime]
     
     class Config:
         from_attributes = True
 
-
-class LogoUploadResponse(BaseModel):
-    logo_url: str
-    message: str
+class OrganizationSimple(BaseModel):
+    id: UUID
+    name: str
+    trade_name: Optional[str]
+    is_active: bool
+    
+    class Config:
+        from_attributes = True

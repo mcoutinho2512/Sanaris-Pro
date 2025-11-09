@@ -2,8 +2,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  Home,
+import { Home,
+  Building2,
   Users,
   Calendar,
   FileText,
@@ -14,8 +14,7 @@ import {
   BarChart3,
   Stethoscope,
   LogOut,
-  UserCog,
-} from "lucide-react";
+  UserCog, MessageSquare } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 const menuItems = [
@@ -29,9 +28,11 @@ const menuItems = [
   { href: "/faturamento-tiss", label: "Faturamento TISS", icon: Receipt },
   { href: "/relatorios", label: "Relatórios", icon: BarChart3 },
   { href: "/configuracoes", label: "Configurações", icon: Settings },
+  { href: '/chat', label: 'Chat', icon: MessageSquare },
 ];
 
 const adminMenuItems = [
+  { href: "/organizacoes", label: "Organizações", icon: Building2 },
   { href: "/usuarios", label: "Usuários", icon: UserCog },
 ];
 
