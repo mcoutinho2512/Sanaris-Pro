@@ -105,10 +105,6 @@ export default function LoginPage() {
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
-
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">Use suas credenciais do Google OAuth</p>
-        </div>
       </div>
     </div>
   );
