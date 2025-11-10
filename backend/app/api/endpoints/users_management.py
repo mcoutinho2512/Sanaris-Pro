@@ -15,21 +15,86 @@ class UserCreate(BaseModel):
     email: EmailStr
     full_name: str = Field(..., min_length=1, max_length=255)
     password: str = Field(..., min_length=6)
-    organization_id: UUID  # ADMIN ESCOLHE A ORGANIZAÇÃO
-    role: str = Field(default="user", pattern="^(admin|user)$")
+    organization_id: UUID
+    role: str = Field(default="user", pattern="^(super_admin|admin|user)$")
     crm: Optional[str] = None
     specialty: Optional[str] = None
+
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    organization_id: Optional[UUID] = None
+    role: Optional[str] = None
+    crm: Optional[str] = None
+    specialty: Optional[str] = None
+    is_active: Optional[bool] = None
 
 class UserResponse(BaseModel):
     id: UUID
     email: str
     full_name: str
-    organization_id: UUID
+    organization_id: Optional[UUID]
+    organization_name: Optional[str] = None
     role: str
     is_active: bool
+    crm: Optional[str] = None
+    specialty: Optional[str] = None
+    created_at: str
     
     class Config:
         from_attributes = True
+
+@router.get("/", response_model=List[UserResponse])
+def list_users(
+    skip: int = 0,
+    limit: int = 100,
+    organization_id: Optional[UUID] = None,
+    is_active: Optional[bool] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Listar usuários (super_admin vê todos, admin vê só da sua org)"""
+    
+    # Verificar permissão
+    if current_user.role not in ['super_admin', 'admin']:
+        raise HTTPException(status_code=403, detail="Sem permissão")
+    
+    query = db.query(User)
+    
+    # Super admin vê todos
+    if current_user.role == 'super_admin':
+        if organization_id:
+            query = query.filter(User.organization_id == organization_id)
+    # Admin vê só da própria organização
+    elif current_user.role == 'admin':
+        query = query.filter(User.organization_id == current_user.organization_id)
+    
+    if is_active is not None:
+        query = query.filter(User.is_active == is_active)
+    
+    users = query.offset(skip).limit(limit).all()
+    
+    result = []
+    for user in users:
+        org_name = None
+        if user.organization_id:
+            org = db.query(Organization).filter(Organization.id == user.organization_id).first()
+            if org:
+                org_name = org.name
+        
+        result.append(UserResponse(
+            id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            organization_id=user.organization_id,
+            organization_name=org_name,
+            role=user.role,
+            is_active=user.is_active,
+            crm=user.crm if hasattr(user, 'crm') else None,
+            specialty=user.specialty if hasattr(user, 'specialty') else None,
+            created_at=user.created_at.isoformat()
+        ))
+    
+    return result
 
 @router.post("/", response_model=UserResponse)
 def create_user(
@@ -37,31 +102,30 @@ def create_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Criar novo usuário (apenas admin)"""
+    """Criar novo usuário (super_admin ou admin da própria org)"""
     
-    if current_user.role != 'admin':
-        raise HTTPException(status_code=403, detail="Apenas administradores podem criar usuários")
+    # Verificar permissão
+    if current_user.role not in ['super_admin', 'admin']:
+        raise HTTPException(status_code=403, detail="Sem permissão")
+    
+    # Admin só pode criar na própria organização
+    if current_user.role == 'admin':
+        if user_data.organization_id != current_user.organization_id:
+            raise HTTPException(status_code=403, detail="Admin só pode criar usuários na própria organização")
+        
+        # Admin não pode criar super_admin ou admin
+        if user_data.role in ['super_admin', 'admin']:
+            raise HTTPException(status_code=403, detail="Admin de clínica não pode criar administradores")
     
     # Verificar se email já existe
-    existing_user = db.query(User).filter(User.email == user_data.email).first()
-    if existing_user:
+    existing = db.query(User).filter(User.email == user_data.email).first()
+    if existing:
         raise HTTPException(status_code=400, detail="Email já cadastrado")
     
-    # Verificar se organização existe
+    # Verificar organização
     org = db.query(Organization).filter(Organization.id == user_data.organization_id).first()
     if not org:
         raise HTTPException(status_code=404, detail="Organização não encontrada")
-    
-    if not org.is_active:
-        raise HTTPException(status_code=400, detail="Organização inativa")
-    
-    # Verificar limite de usuários
-    user_count = db.query(User).filter(User.organization_id == org.id).count()
-    if user_count >= org.max_users:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Limite de {org.max_users} usuários atingido para esta organização"
-        )
     
     # Criar usuário
     new_user = User(
@@ -70,36 +134,75 @@ def create_user(
         hashed_password=get_password_hash(user_data.password),
         organization_id=user_data.organization_id,
         role=user_data.role,
-        crm=user_data.crm,
-        specialty=user_data.specialty,
         is_active=True
     )
+    
+    if hasattr(new_user, 'crm'):
+        new_user.crm = user_data.crm
+    if hasattr(new_user, 'specialty'):
+        new_user.specialty = user_data.specialty
     
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     
-    return new_user
+    return UserResponse(
+        id=new_user.id,
+        email=new_user.email,
+        full_name=new_user.full_name,
+        organization_id=new_user.organization_id,
+        organization_name=org.name,
+        role=new_user.role,
+        is_active=new_user.is_active,
+        crm=new_user.crm if hasattr(new_user, 'crm') else None,
+        specialty=new_user.specialty if hasattr(new_user, 'specialty') else None,
+        created_at=new_user.created_at.isoformat()
+    )
 
-@router.get("/", response_model=List[UserResponse])
-def list_users(
-    skip: int = 0,
-    limit: int = 100,
-    organization_id: Optional[UUID] = None,
+@router.get("/statistics/by-organization")
+def get_statistics(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Listar usuários"""
+    """Estatísticas por organização"""
     
-    query = db.query(User)
+    if current_user.role not in ['super_admin', 'admin']:
+        raise HTTPException(status_code=403, detail="Sem permissão")
     
-    # Se admin, pode ver de qualquer org
-    if current_user.role == 'admin':
-        if organization_id:
-            query = query.filter(User.organization_id == organization_id)
+    from sqlalchemy import func
+    
+    # Super admin vê todas
+    if current_user.role == 'super_admin':
+        stats = db.query(
+            Organization.id,
+            Organization.name,
+            Organization.max_users,
+            func.count(User.id).label('current_users')
+        ).outerjoin(
+            User, (User.organization_id == Organization.id) & (User.is_active == True)
+        ).group_by(Organization.id, Organization.name, Organization.max_users).all()
+    # Admin vê só sua org
     else:
-        # Usuário comum só vê da sua organização
-        query = query.filter(User.organization_id == current_user.organization_id)
+        stats = db.query(
+            Organization.id,
+            Organization.name,
+            Organization.max_users,
+            func.count(User.id).label('current_users')
+        ).outerjoin(
+            User, (User.organization_id == Organization.id) & (User.is_active == True)
+        ).filter(
+            Organization.id == current_user.organization_id
+        ).group_by(Organization.id, Organization.name, Organization.max_users).all()
     
-    users = query.offset(skip).limit(limit).all()
-    return users
+    result = []
+    for org_id, org_name, max_users, current_users in stats:
+        result.append({
+            "organization_id": str(org_id),
+            "organization_name": org_name,
+            "max_users": max_users,
+            "current_users": current_users,
+            "available_slots": max_users - current_users,
+            "usage_percentage": round((current_users / max_users * 100) if max_users > 0 else 0, 2)
+        })
+    
+    return result

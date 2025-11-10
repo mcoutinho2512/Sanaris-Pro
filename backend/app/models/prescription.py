@@ -56,7 +56,7 @@ class Prescription(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relacionamentos
-    patient = relationship("Patient", back_populates="prescriptions")
+    patient = relationship("Patient", )
     items = relationship("PrescriptionItem", back_populates="prescription", cascade="all, delete-orphan")
     
     def __repr__(self):

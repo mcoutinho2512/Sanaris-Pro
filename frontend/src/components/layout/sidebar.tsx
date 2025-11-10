@@ -1,149 +1,248 @@
-"use client";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Home,
-  Building2,
-  Users,
-  Calendar,
-  FileText,
-  Pill,
-  DollarSign,
-  Receipt,
-  Settings,
-  BarChart3,
-  Stethoscope,
-  LogOut,
-  UserCog, MessageSquare } from 'lucide-react';
-import { cn } from "@/lib/utils";
+'use client';
 
-const menuItems = [
-  { href: "/", label: "Dashboard", icon: Home },
-  { href: "/pacientes", label: "Pacientes", icon: Users },
-  { href: "/agenda", label: "Agenda", icon: Calendar },
-  { href: "/prontuarios", label: "Prontuários", icon: FileText },
-  { href: "/prescricoes", label: "Prescrições", icon: Pill },
-  { href: "/cfm", label: "CFM", icon: Stethoscope },
-  { href: "/financeiro", label: "Financeiro", icon: DollarSign },
-  { href: "/faturamento-tiss", label: "Faturamento TISS", icon: Receipt },
-  { href: "/relatorios", label: "Relatórios", icon: BarChart3 },
-  { href: "/configuracoes", label: "Configurações", icon: Settings },
-  { href: '/chat', label: 'Chat', icon: MessageSquare },
-];
+import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { Home, Calendar, FileText, MessageSquare, DollarSign, Users as UsersIcon, Settings, LogOut, Building2, Menu, X, Users, Shield } from 'lucide-react';
 
-const adminMenuItems = [
-  { href: "/organizacoes", label: "Organizações", icon: Building2 },
-  { href: "/usuarios", label: "Usuários", icon: UserCog },
-];
-
-export function Sidebar() {
+export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [userName, setUserName] = useState("Usuário");
+  const [user, setUser] = useState<any>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    try {
-      const userStr = localStorage.getItem('user');
-      if (userStr && userStr !== 'undefined') {
+    const userStr = localStorage.getItem('user');
+    if (userStr && userStr !== 'undefined') {
+      try {
         const userData = JSON.parse(userStr);
-        setIsAdmin(userData.role === 'admin');
-        setUserName(userData.full_name || 'Usuário');
+        setUser(userData);
+      } catch (error) {
+        console.error('Erro ao parsear user:', error);
       }
-    } catch (error) {
-      console.error('Erro ao carregar dados do usuário:', error);
     }
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('user');
     localStorage.removeItem('access_token');
+    localStorage.removeItem('user');
     router.push('/login');
   };
 
+  const isAdmin = user?.role === 'super_admin' || user?.role === 'admin';
+  const isSuperAdmin = user?.role === 'super_admin';
+
+  if (!user) return null;
+
   return (
-    <div className="flex h-screen w-64 flex-col border-r bg-background">
-      <div className="flex h-16 items-center border-b px-6">
-        <h1 className="text-2xl font-bold text-primary">Sanaris Pro</h1>
-      </div>
+    <>
+      <button
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg"
+      >
+        {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+      </button>
 
-      <nav className="flex-1 space-y-1 p-4 overflow-auto">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.href;
-          
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+      {isMobileMenuOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      <aside
+        className={`
+          fixed top-0 left-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col
+          transition-transform duration-300 z-40
+          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}
+      >
+        <div className="p-6 border-b border-gray-200">
+          <h1 className="text-2xl font-bold text-gray-900">Sanaris Pro</h1>
+        </div>
+
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <Link
+            href="/"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              pathname === '/' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'
+            }`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <Home className="w-5 h-5" />
+            <span>Dashboard</span>
+          </Link>
+
+          <Link
+            href="/pacientes"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              pathname === '/pacientes' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'
+            }`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <UsersIcon className="w-5 h-5" />
+            <span>Pacientes</span>
+          </Link>
+
+          <Link
+            href="/agenda"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              pathname === '/agenda' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'
+            }`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <Calendar className="w-5 h-5" />
+            <span>Agenda</span>
+          </Link>
+
+          <Link
+            href="/prontuarios"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              pathname === '/prontuarios' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'
+            }`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <FileText className="w-5 h-5" />
+            <span>Prontuários</span>
+          </Link>
+
+          <Link
+            href="/prescricoes"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              pathname === '/prescricoes' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'
+            }`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <FileText className="w-5 h-5" />
+            <span>Prescrições</span>
+          </Link>
+
+          <Link
+            href="/cfm"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              pathname === '/cfm' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'
+            }`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <Shield className="w-5 h-5" />
+            <span>CFM</span>
+          </Link>
+
+          <Link
+            href="/financeiro"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              pathname === '/financeiro' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'
+            }`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <DollarSign className="w-5 h-5" />
+            <span>Financeiro</span>
+          </Link>
+
+          <Link
+            href="/faturamento-tiss"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              pathname === '/faturamento-tiss' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'
+            }`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <FileText className="w-5 h-5" />
+            <span>Faturamento TISS</span>
+          </Link>
+
+          <Link
+            href="/relatorios"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              pathname === '/relatorios' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'
+            }`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <FileText className="w-5 h-5" />
+            <span>Relatórios</span>
+          </Link>
+
+          <Link
+            href="/configuracoes"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              pathname === '/configuracoes' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'
+            }`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <Settings className="w-5 h-5" />
+            <span>Configurações</span>
+          </Link>
+
+          <Link
+            href="/chat"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              pathname === '/chat' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'
+            }`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <MessageSquare className="w-5 h-5" />
+            <span>Chat</span>
+          </Link>
+
+          {isAdmin && (
+            <>
+              <div className="pt-4 mt-4 border-t border-gray-200">
+                <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                  Administração
+                </p>
+              </div>
+
+              {isSuperAdmin && (
+                <Link
+                  href="/organizacoes"
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    pathname === '/organizacoes' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Building2 className="w-5 h-5" />
+                  <span>Organizações</span>
+                </Link>
               )}
-            >
-              <Icon className="h-5 w-5" />
-              {item.label}
-            </Link>
-          );
-        })}
 
-        {isAdmin && (
-          <>
-            <div className="my-4 border-t pt-4">
-              <p className="px-3 text-xs font-semibold text-muted-foreground uppercase">
-                Administração
+              <Link
+                href="/usuarios"
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  pathname === '/usuarios' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Users className="w-5 h-5" />
+                <span>Usuários</span>
+              </Link>
+            </>
+          )}
+        </nav>
+
+        <div className="p-4 border-t border-gray-200">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+              <span className="text-gray-600 font-semibold">
+                {user?.full_name?.charAt(0).toUpperCase() || 'U'}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {user?.full_name || 'Usuário'}
+              </p>
+              <p className="text-xs text-gray-500 capitalize">
+                {user?.role === 'super_admin' ? 'Super Admin' : user?.role === 'admin' ? 'Admin' : 'Usuário'}
               </p>
             </div>
-            {adminMenuItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  )}
-                >
-                  <Icon className="h-5 w-5" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </>
-        )}
-      </nav>
-
-      <div className="border-t p-4">
-        <div className="mb-3 flex items-center gap-3 rounded-lg px-3 py-2">
-          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-sm font-semibold text-primary">
-              {userName.charAt(0).toUpperCase()}
-            </span>
           </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium">{userName}</p>
-            <p className="text-xs text-muted-foreground">
-              {isAdmin ? 'Administrador' : 'Usuário'}
-            </p>
-          </div>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Sair</span>
+          </button>
         </div>
-        
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-        >
-          <LogOut className="h-5 w-5" />
-          Sair
-        </button>
-      </div>
-    </div>
+      </aside>
+    </>
   );
 }

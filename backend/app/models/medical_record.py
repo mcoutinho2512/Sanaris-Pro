@@ -75,7 +75,7 @@ class MedicalRecord(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relacionamentos
-    patient = relationship("Patient", back_populates="medical_records")
+    patient = relationship("Patient", )
     vital_signs = relationship("VitalSigns", back_populates="medical_record", cascade="all, delete-orphan")
     attachments = relationship("MedicalRecordAttachment", back_populates="medical_record", cascade="all, delete-orphan")
     

@@ -93,7 +93,7 @@ class Appointment(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relacionamentos
-    patient = relationship("Patient", back_populates="appointments")
+    patient = relationship("Patient", )
     
     def __repr__(self):
         return f"<Appointment {self.id} - {self.status}>"

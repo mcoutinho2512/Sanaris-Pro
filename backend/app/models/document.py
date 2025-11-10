@@ -83,7 +83,7 @@ class PatientDocument(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relacionamentos
-    patient = relationship("Patient", back_populates="documents")
+    patient = relationship("Patient", )
     template = relationship("DocumentTemplate")
     
     def __repr__(self):
