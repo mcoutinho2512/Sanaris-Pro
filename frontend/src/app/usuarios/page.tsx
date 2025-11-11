@@ -1,170 +1,104 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Plus, Edit, Trash2, Save, X, Building2, Shield, User as UserIcon, Filter, BarChart3, ArrowLeft } from 'lucide-react';
+import { UserCog, Building2, Shield, Edit, Trash2, Plus, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface User {
   id: string;
   email: string;
   full_name: string;
-  organization_id?: string;
-  organization_name?: string;
   role: string;
   is_active: boolean;
-  crm?: string;
-  specialty?: string;
-  created_at: string;
+  organization_name?: string;
 }
 
 interface Organization {
   id: string;
   name: string;
-  max_users: number;
-}
-
-interface Statistics {
-  organization_id: string;
-  organization_name: string;
-  max_users: number;
-  current_users: number;
-  available_slots: number;
-  usage_percentage: number;
 }
 
 export default function UsersManagementPage() {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [statistics, setStatistics] = useState<Statistics[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  
-  const [showModal, setShowModal] = useState(false);
-  const [showStatsModal, setShowStatsModal] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
-  const [filterOrg, setFilterOrg] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterRole, setFilterRole] = useState<string>('all');
-  
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string>('');
+
+  // Form states
   const [formData, setFormData] = useState({
-    email: '',
     full_name: '',
-    password: '',
-    organization_id: '',
+    email: '',
     role: 'user',
-    crm: '',
-    specialty: '',
+    organization_id: '',
     is_active: true
   });
 
   useEffect(() => {
-    loadCurrentUser();
-    loadUsers();
-    loadOrganizations();
-    loadStatistics();
+    loadData();
   }, []);
 
-  useEffect(() => {
-    applyFilters();
-  }, [users, filterOrg, filterStatus, filterRole]);
-
-  const loadCurrentUser = async () => {
+  const loadData = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch('http://localhost:8888/api/v1/auth/me', {
+      
+      // Verificar role do usuário atual
+      const meResponse = await fetch('http://localhost:8888/api/v1/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentUser(data);
+      if (meResponse.ok) {
+        const userData = await meResponse.json();
+        setCurrentUserRole(userData.role);
       }
-    } catch (error) {
-      console.error('Erro ao carregar usuário atual:', error);
-    }
-  };
-
-  const applyFilters = () => {
-    let filtered = [...users];
-    
-    if (filterOrg !== 'all') {
-      filtered = filtered.filter(u => u.organization_id === filterOrg);
-    }
-    
-    if (filterStatus !== 'all') {
-      const isActive = filterStatus === 'active';
-      filtered = filtered.filter(u => u.is_active === isActive);
-    }
-    
-    if (filterRole !== 'all') {
-      filtered = filtered.filter(u => u.role === filterRole);
-    }
-    
-    setFilteredUsers(filtered);
-  };
-
-  const loadUsers = async () => {
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('http://localhost:8888/api/v1/users-management/', {
+      
+      // Carregar usuários
+      const usersResponse = await fetch('http://localhost:8888/api/v1/users-management/', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data);
-        setFilteredUsers(data);
+      if (usersResponse.ok) {
+        const usersData = await usersResponse.json();
+        setUsers(usersData);
+      }
+      
+      // Carregar organizações (se for super admin)
+      const orgsResponse = await fetch('http://localhost:8888/api/v1/organizations/', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (orgsResponse.ok) {
+        const orgsData = await orgsResponse.json();
+        setOrganizations(orgsData);
       }
     } catch (error) {
-      console.error('Erro ao carregar usuários:', error);
+      console.error('Erro ao carregar dados:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const loadOrganizations = async () => {
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('http://localhost:8888/api/v1/organizations/', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setOrganizations(data);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar organizações:', error);
-    }
+  const handleEdit = (user: User) => {
+    setEditingUser(user);
+    setFormData({
+      full_name: user.full_name,
+      email: user.email,
+      role: user.role,
+      organization_id: '',
+      is_active: user.is_active
+    });
+    setShowEditModal(true);
   };
 
-  const loadStatistics = async () => {
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('http://localhost:8888/api/v1/users-management/statistics/by-organization', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setStatistics(data);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error);
-    }
-  };
+  const handleSave = async () => {
+    if (!editingUser) return;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
     try {
       const token = localStorage.getItem('access_token');
-      
-      const response = await fetch('http://localhost:8888/api/v1/users-management/', {
-        method: 'POST',
+      const response = await fetch(`http://localhost:8888/api/v1/users-management//${editingUser.id}`, {
+        method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -173,32 +107,41 @@ export default function UsersManagementPage() {
       });
 
       if (response.ok) {
-        alert('Usuário criado!');
-        setShowModal(false);
-        resetForm();
-        loadUsers();
-        loadStatistics();
+        alert('Usuário atualizado com sucesso!');
+        setShowEditModal(false);
+        setEditingUser(null);
+        loadData();
       } else {
         const error = await response.json();
-        alert(error.detail || 'Erro ao criar usuário');
+        alert(error.detail || 'Erro ao atualizar usuário');
       }
     } catch (error) {
       console.error('Erro:', error);
-      alert('Erro ao salvar usuário');
+      alert('Erro ao atualizar usuário');
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      email: '',
-      full_name: '',
-      password: '',
-      organization_id: currentUser?.role === 'admin' ? currentUser.organization_id : '',
-      role: 'user',
-      crm: '',
-      specialty: '',
-      is_active: true
-    });
+  const handleDelete = async (userId: string, userName: string) => {
+    if (!confirm(`Deseja realmente deletar o usuário ${userName}?`)) return;
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`http://localhost:8888/api/v1/users-management//${userId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        alert('Usuário deletado com sucesso!');
+        loadData();
+      } else {
+        const error = await response.json();
+        alert(error.detail || 'Erro ao deletar usuário');
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      alert('Erro ao deletar usuário');
+    }
   };
 
   if (isLoading) {
@@ -206,336 +149,195 @@ export default function UsersManagementPage() {
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando usuários...</p>
+          <p className="mt-4 text-gray-600">Carregando...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-4">
-        <button
-          onClick={() => router.push('/')}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Voltar ao Sistema</span>
-        </button>
-      </div>
-
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Users className="w-8 h-8 text-blue-600" />
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Gerenciamento de Usuários</h1>
-            <p className="text-sm text-gray-500">{filteredUsers.length} usuário(s) encontrado(s)</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-4">
           <button
-            onClick={() => setShowStatsModal(true)}
-            className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200"
+            onClick={() => router.push('/')}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
           >
-            <BarChart3 className="w-5 h-5" />
-            Estatísticas
-          </button>
-          <button
-            onClick={() => {
-              setEditingUser(null);
-              resetForm();
-              setShowModal(true);
-            }}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            <Plus className="w-5 h-5" />
-            Novo Usuário
+            <ArrowLeft className="w-5 h-5" />
+            <span>Voltar ao Dashboard</span>
           </button>
         </div>
-      </div>
 
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <Filter className="w-5 h-5 text-gray-600" />
-          <h3 className="font-semibold text-gray-900">Filtros</h3>
-        </div>
-        <div className={`grid ${currentUser?.role === 'super_admin' ? 'grid-cols-3' : 'grid-cols-2'} gap-4`}>
-          {currentUser?.role === 'super_admin' && (
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <UserCog className="w-8 h-8 text-blue-600" />
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Organização</label>
-              <select
-                value={filterOrg}
-                onChange={(e) => setFilterOrg(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-              >
-                <option value="all">Todas</option>
-                {organizations.map(org => (
-                  <option key={org.id} value={org.id}>{org.name}</option>
-                ))}
-              </select>
+              <h1 className="text-3xl font-bold text-gray-900">Gerenciamento de Usuários</h1>
+              <p className="text-sm text-gray-500">{users.length} usuário(s) no sistema</p>
             </div>
-          )}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-            >
-              <option value="all">Todos</option>
-              <option value="active">Ativos</option>
-              <option value="inactive">Inativos</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Papel</label>
-            <select
-              value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-            >
-              <option value="all">Todos</option>
-              <option value="super_admin">Super Admin</option>
-              <option value="admin">Admin</option>
-              <option value="user">Usuário</option>
-            </select>
           </div>
         </div>
-      </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuário</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Organização</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Papel</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">CRM</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {filteredUsers.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{user.full_name}</p>
-                    <p className="text-sm text-gray-500">{user.email}</p>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-900">{user.organization_name || '-'}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full ${
-                    user.role === 'super_admin' ? 'bg-red-100 text-red-700' :
-                    user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 
-                    'bg-blue-100 text-blue-700'
-                  }`}>
-                    {user.role === 'super_admin' ? <Shield className="w-3 h-3" /> : 
-                     user.role === 'admin' ? <Shield className="w-3 h-3" /> : 
-                     <UserIcon className="w-3 h-3" />}
-                    {user.role === 'super_admin' ? 'Super Admin' : user.role === 'admin' ? 'Admin' : 'Usuário'}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                  }`}>
-                    {user.is_active ? 'Ativo' : 'Inativo'}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="text-sm text-gray-900">{user.crm || '-'}</span>
-                </td>
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Usuário
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Email
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Perfil
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Organização
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Ações
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {filteredUsers.length === 0 && (
-          <div className="text-center py-12">
-            <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">Nenhum usuário encontrado</p>
-          </div>
-        )}
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {users.map((user) => (
+                <tr key={user.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span className="text-blue-600 font-semibold">
+                          {user.full_name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">{user.full_name}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{user.email}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      user.role === 'super_admin' ? 'bg-red-100 text-red-800' :
+                      user.role === 'admin' ? 'bg-blue-100 text-blue-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {user.role === 'super_admin' ? 'Super Admin' :
+                       user.role === 'admin' ? 'Admin' : 'Usuário'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.organization_name || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {user.is_active ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => handleEdit(user)}
+                      className="text-blue-600 hover:text-blue-900 mr-4"
+                    >
+                      <Edit className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(user.id, user.full_name)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* MODAL CRIAR */}
-      {showModal && (
+      {/* Modal de Edição */}
+      {showEditModal && editingUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Novo Usuário</h2>
-              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-gray-100 rounded">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Nome Completo *</label>
-                  <input
-                    type="text"
-                    value={formData.full_name}
-                    onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Senha * (mínimo 6 caracteres)</label>
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    required
-                    minLength={6}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Organização *</label>
-                  {currentUser?.role === 'super_admin' ? (
-                    <select
-                      value={formData.organization_id}
-                      onChange={(e) => setFormData({...formData, organization_id: e.target.value})}
-                      required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-                    >
-                      <option value="">Selecione uma organização</option>
-                      {organizations.map(org => (
-                        <option key={org.id} value={org.id}>{org.name}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      type="text"
-                      value={organizations.find(o => o.id === currentUser?.organization_id)?.name || ''}
-                      disabled
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100"
-                    />
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Papel *</label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({...formData, role: e.target.value})}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-                  >
-                    <option value="user">Usuário</option>
-                    {currentUser?.role === 'super_admin' && (
-                      <>
-                        <option value="admin">Admin da Clínica</option>
-                        <option value="super_admin">Super Administrador</option>
-                      </>
-                    )}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">CRM</label>
-                  <input
-                    type="text"
-                    value={formData.crm}
-                    onChange={(e) => setFormData({...formData, crm: e.target.value})}
-                    placeholder="12345"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Especialidade</label>
-                  <input
-                    type="text"
-                    value={formData.specialty}
-                    onChange={(e) => setFormData({...formData, specialty: e.target.value})}
-                    placeholder="Cardiologia"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-                >
-                  <Save className="w-4 h-4" />
-                  Criar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL ESTATÍSTICAS */}
-      {showStatsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Estatísticas por Organização</h2>
-              <button onClick={() => setShowStatsModal(false)} className="p-2 hover:bg-gray-100 rounded">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">Editar Usuário</h3>
+            
             <div className="space-y-4">
-              {statistics.map((stat) => (
-                <div key={stat.organization_id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h3 className="font-semibold text-lg">{stat.organization_name}</h3>
-                      <p className="text-sm text-gray-500">
-                        {stat.current_users} de {stat.max_users} usuários
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-blue-600">{stat.usage_percentage}%</p>
-                      <p className="text-sm text-gray-500">{stat.available_slots} vagas disponíveis</p>
-                    </div>
-                  </div>
-                  
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${
-                        stat.usage_percentage >= 90 ? 'bg-red-600' :
-                        stat.usage_percentage >= 70 ? 'bg-yellow-600' :
-                        'bg-green-600'
-                      }`}
-                      style={{ width: `${stat.usage_percentage}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nome Completo
+                </label>
+                <input
+                  type="text"
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Perfil
+                </label>
+                <select
+                  value={formData.role}
+                  onChange={(e) => setFormData({...formData, role: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  {currentUserRole === 'super_admin' && (
+                    <option value="super_admin">Super Admin</option>
+                  )}
+                  <option value="admin">Admin</option>
+                  <option value="user">Usuário</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Usuário Ativo</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleSave}
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              >
+                Salvar
+              </button>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingUser(null);
+                }}
+                className="flex-1 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
             </div>
           </div>
         </div>

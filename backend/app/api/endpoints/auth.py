@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from authlib.integrations.starlette_client import OAuth
@@ -306,3 +306,210 @@ async def list_users(
     
     users = db.query(User).all()
     return users
+
+@router.put("/change-password")
+def change_password(
+    old_password: str = Form(...),
+    new_password: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Trocar senha do usuário logado
+    """
+    from app.core.security import verify_password, get_password_hash
+    
+    # Verificar senha antiga
+    if not verify_password(old_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=400,
+            detail="Senha atual incorreta"
+        )
+    
+    # Validar nova senha
+    if len(new_password) < 6:
+        raise HTTPException(
+            status_code=400,
+            detail="A nova senha deve ter pelo menos 6 caracteres"
+        )
+    
+    if old_password == new_password:
+        raise HTTPException(
+            status_code=400,
+            detail="A nova senha deve ser diferente da senha atual"
+        )
+    
+    # Atualizar senha
+    current_user.hashed_password = get_password_hash(new_password)
+    db.commit()
+    
+    return {
+        "message": "Senha alterada com sucesso",
+        "user": {
+            "id": str(current_user.id),
+            "email": current_user.email,
+            "full_name": current_user.full_name
+        }
+    }
+
+
+# ==================== RECUPERAÇÃO DE SENHA ====================
+
+@router.post("/forgot-password")
+def request_password_reset(
+    email: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Solicitar reset de senha - Gera token e 'envia' email
+    """
+    import secrets
+    import hashlib
+    from datetime import timedelta
+    from app.models.password_reset_token import PasswordResetToken
+    
+    # Buscar usuário
+    user = db.query(User).filter(User.email == email).first()
+    
+    # SEMPRE retornar sucesso (segurança - não revelar se email existe)
+    if not user:
+        return {
+            "message": "Se o email existir no sistema, você receberá um link de recuperação."
+        }
+    
+    # Gerar token único
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    
+    # Invalidar tokens anteriores do usuário
+    db.query(PasswordResetToken).filter(
+        PasswordResetToken.user_id == user.id,
+        PasswordResetToken.is_used == False
+    ).update({"is_used": True})
+    
+    # Criar novo token (válido por 15 minutos)
+    reset_token = PasswordResetToken(
+        user_id=user.id,
+        token_hash=token_hash,
+        expires_at=datetime.utcnow() + timedelta(minutes=15)
+    )
+    
+    db.add(reset_token)
+    db.commit()
+    
+    # AQUI: Em produção, enviar email com o link
+    # reset_link = f"http://localhost:3001/reset-password?token={raw_token}"
+    # send_email(user.email, "Recuperação de Senha", reset_link)
+    
+    # POR ENQUANTO: Log do token (REMOVER EM PRODUÇÃO!)
+    print(f"\n{'='*60}")
+    print(f"🔐 TOKEN DE RECUPERAÇÃO PARA: {user.email}")
+    print(f"Token: {raw_token}")
+    print(f"Link: http://localhost:3001/reset-password?token={raw_token}")
+    print(f"Válido até: {reset_token.expires_at}")
+    print(f"{'='*60}\n")
+    
+    return {
+        "message": "Se o email existir no sistema, você receberá um link de recuperação.",
+        "dev_token": raw_token  # REMOVER EM PRODUÇÃO!
+    }
+
+
+@router.post("/reset-password")
+def reset_password_with_token(
+    token: str = Form(...),
+    new_password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Resetar senha usando token
+    """
+    import hashlib
+    from app.models.password_reset_token import PasswordResetToken
+    from app.core.security import get_password_hash
+    
+    # Validar nova senha
+    if len(new_password) < 6:
+        raise HTTPException(
+            status_code=400,
+            detail="A senha deve ter pelo menos 6 caracteres"
+        )
+    
+    # Hash do token recebido
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    
+    # Buscar token
+    reset_token = db.query(PasswordResetToken).filter(
+        PasswordResetToken.token_hash == token_hash
+    ).first()
+    
+    if not reset_token:
+        raise HTTPException(
+            status_code=400,
+            detail="Token inválido ou expirado"
+        )
+    
+    # Verificar se é válido
+    if not reset_token.is_valid():
+        raise HTTPException(
+            status_code=400,
+            detail="Token inválido ou expirado"
+        )
+    
+    # Buscar usuário
+    user = db.query(User).filter(User.id == reset_token.user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="Usuário não encontrado"
+        )
+    
+    # Atualizar senha
+    user.hashed_password = get_password_hash(new_password)
+    
+    # Marcar token como usado
+    reset_token.is_used = True
+    reset_token.used_at = datetime.utcnow()
+    
+    db.commit()
+    
+    return {
+        "message": "Senha alterada com sucesso! Faça login com sua nova senha.",
+        "user": {
+            "id": str(user.id),
+            "email": user.email,
+            "full_name": user.full_name
+        }
+    }
+
+
+@router.get("/verify-reset-token/{token}")
+def verify_reset_token(
+    token: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Verificar se token é válido (sem usar)
+    """
+    import hashlib
+    from app.models.password_reset_token import PasswordResetToken
+    
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    
+    reset_token = db.query(PasswordResetToken).filter(
+        PasswordResetToken.token_hash == token_hash
+    ).first()
+    
+    if not reset_token or not reset_token.is_valid():
+        raise HTTPException(
+            status_code=400,
+            detail="Token inválido ou expirado"
+        )
+    
+    user = db.query(User).filter(User.id == reset_token.user_id).first()
+    
+    return {
+        "valid": True,
+        "user_email": user.email if user else None,
+        "expires_at": reset_token.expires_at.isoformat()
+    }

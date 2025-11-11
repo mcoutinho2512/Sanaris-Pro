@@ -1,0 +1,145 @@
+'use client';
+
+import { useState } from 'react';
+import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+
+export default function ForgotPasswordPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+  const [devToken, setDevToken] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append('email', email);
+
+      const response = await fetch('http://localhost:8888/api/v1/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSuccess(true);
+        if (data.dev_token) {
+          setDevToken(data.dev_token);
+        }
+      } else {
+        const data = await response.json();
+        setError(data.detail || 'Erro ao solicitar recuperação');
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      setError('Erro ao conectar com o servidor');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+          <div className="flex flex-col items-center text-center">
+            <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Email Enviado!</h2>
+            <p className="text-gray-600 mb-6">
+              Se o email <strong>{email}</strong> estiver cadastrado, você receberá um link de recuperação.
+            </p>
+
+            {devToken && (
+              <div className="w-full bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <p className="text-sm font-semibold text-yellow-800 mb-2">
+                  🔧 MODO DESENVOLVIMENTO
+                </p>
+                <p className="text-xs text-yellow-700 mb-2">
+                  Token gerado (remover em produção):
+                </p>
+                <Link
+                  href={`/reset-password?token=${devToken}`}
+                  className="block w-full bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-medium"
+                >
+                  Ir para Reset de Senha
+                </Link>
+              </div>
+            )}
+
+            <Link
+              href="/login"
+              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Voltar ao Login
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
+      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+        <div className="mb-6">
+          <Link
+            href="/login"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Voltar
+          </Link>
+          
+          <div className="flex items-center gap-3 mb-2">
+            <Mail className="w-8 h-8 text-blue-600" />
+            <h1 className="text-2xl font-bold text-gray-900">Recuperar Senha</h1>
+          </div>
+          <p className="text-sm text-gray-600">
+            Informe seu email e enviaremos um link para redefinir sua senha.
+          </p>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-800">{error}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Email *
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder="seu@email.com"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50"
+          >
+            {isLoading ? 'Enviando...' : 'Enviar Link de Recuperação'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
