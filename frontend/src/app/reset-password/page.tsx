@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { api } from '@/lib/api';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -27,13 +28,11 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    // Verificar token
-    fetch(`http://localhost:8888/api/v1/auth/verify-reset-token/${token}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.valid) {
+    api.get(`/api/v1/auth/verify-reset-token/${token}`)
+      .then(response => {
+        if (response.data.valid) {
           setTokenValid(true);
-          setUserEmail(data.user_email);
+          setUserEmail(response.data.user_email);
         } else {
           setError('Token inválido ou expirado');
         }
@@ -63,30 +62,29 @@ export default function ResetPasswordPage() {
     setIsLoading(true);
 
     try {
-      const formData = new URLSearchParams();
-      formData.append('token', token!);
-      formData.append('new_password', newPassword);
-
-      const response = await fetch('http://localhost:8888/api/v1/auth/reset-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: formData
+      await api.post('/api/v1/auth/reset-password', {
+        token: token!,
+        new_password: newPassword
       });
 
-      if (response.ok) {
-        setSuccess(true);
-        setTimeout(() => {
-          router.push('/login');
-        }, 3000);
-      } else {
-        const data = await response.json();
-        setError(data.detail || 'Erro ao redefinir senha');
-      }
-    } catch (error) {
+      setSuccess(true);
+      setTimeout(() => {
+        router.push('/login');
+      }, 3000);
+    } catch (error: any) {
       console.error('Erro:', error);
-      setError('Erro ao conectar com o servidor');
+      const errorData = error.response?.data;
+      let errorMessage = 'Erro ao redefinir senha';
+      
+      if (errorData?.detail) {
+        if (typeof errorData.detail === 'string') {
+          errorMessage = errorData.detail;
+        } else if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map((e: any) => e.msg || e.message).join(', ');
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

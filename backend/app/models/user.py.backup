@@ -13,7 +13,6 @@ class User(Base):
     organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=True)
     
     email = Column(String, unique=True, index=True, nullable=False)
-    recovery_email = Column(String, unique=True, index=True, nullable=False)  # Email para recuperação de senha
     hashed_password = Column(String, nullable=True)
     full_name = Column(String, nullable=False)
     

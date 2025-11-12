@@ -18,6 +18,7 @@ from app.core.security import (
     get_current_active_user
 )
 from app.core.database import get_db
+from app.services.email_service import email_service
 from app.models.user import User
 from app.schemas.auth import (
     Token,
@@ -25,6 +26,12 @@ from app.schemas.auth import (
     UserResponse,
     LoginRequest,
     GoogleCallbackResponse
+)
+from app.schemas.password_reset import (
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+    PasswordResetResponse,
+    TokenValidationResponse
 )
 
 router = APIRouter()
@@ -327,7 +334,7 @@ def change_password(
         )
     
     # Validar nova senha
-    if len(new_password) < 6:
+    if len(request.new_password) < 6:
         raise HTTPException(
             status_code=400,
             detail="A nova senha deve ter pelo menos 6 caracteres"
@@ -340,7 +347,7 @@ def change_password(
         )
     
     # Atualizar senha
-    current_user.hashed_password = get_password_hash(new_password)
+    current_user.hashed_password = get_password_hash(request.new_password)
     db.commit()
     
     return {
@@ -355,70 +362,77 @@ def change_password(
 
 # ==================== RECUPERAÇÃO DE SENHA ====================
 
-@router.post("/forgot-password")
+@router.post("/forgot-password", response_model=PasswordResetResponse)
 def request_password_reset(
-    email: str = Form(...),
+    request: ForgotPasswordRequest,
     db: Session = Depends(get_db)
 ):
     """
-    Solicitar reset de senha - Gera token e 'envia' email
+    Solicitar reset de senha - Envia email com link
     """
     import secrets
     import hashlib
     from datetime import timedelta
     from app.models.password_reset_token import PasswordResetToken
+    import os
     
-    # Buscar usuário
-    user = db.query(User).filter(User.email == email).first()
+    # Buscar usuário pelo email de recuperação
+    user = db.query(User).filter(User.recovery_email == request.recovery_email).first()
+    
+    # SEMPRE enviar email de notificação (mesmo se usuário não existir)
+    if user:
+        # Gerar token único
+        raw_token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+        
+        # Invalidar tokens anteriores do usuário
+        db.query(PasswordResetToken).filter(
+            PasswordResetToken.user_id == user.id,
+            PasswordResetToken.is_used == False
+        ).update({"is_used": True})
+        
+        # Criar novo token (válido por 15 minutos)
+        reset_token = PasswordResetToken(
+            user_id=user.id,
+            token_hash=token_hash,
+            expires_at=datetime.utcnow() + timedelta(hours=6)
+        )
+        
+        db.add(reset_token)
+        db.commit()
+        
+        # Gerar link de recuperação
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3001")
+        reset_link = f"{frontend_url}/reset-password?token={raw_token}"
+        
+        # Enviar email com link de recuperação para o recovery_email
+        email_sent = email_service.send_password_reset_email(
+            to_email=user.recovery_email,
+            reset_link=reset_link,
+            user_name=user.full_name
+        )
+        
+        # Enviar email de notificação de segurança
+        email_service.send_password_reset_notification(
+            to_email=user.recovery_email,
+            user_name=user.full_name,
+            ip_address="127.0.0.1"  # TODO: pegar IP real da request
+        )
+        
+        if email_sent:
+            print(f"✅ Email de recuperação enviado para: {user.recovery_email}")
+        else:
+            print(f"❌ Falha ao enviar email para: {user.recovery_email}")
     
     # SEMPRE retornar sucesso (segurança - não revelar se email existe)
-    if not user:
-        return {
-            "message": "Se o email existir no sistema, você receberá um link de recuperação."
-        }
-    
-    # Gerar token único
-    raw_token = secrets.token_urlsafe(32)
-    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-    
-    # Invalidar tokens anteriores do usuário
-    db.query(PasswordResetToken).filter(
-        PasswordResetToken.user_id == user.id,
-        PasswordResetToken.is_used == False
-    ).update({"is_used": True})
-    
-    # Criar novo token (válido por 15 minutos)
-    reset_token = PasswordResetToken(
-        user_id=user.id,
-        token_hash=token_hash,
-        expires_at=datetime.utcnow() + timedelta(minutes=15)
-    )
-    
-    db.add(reset_token)
-    db.commit()
-    
-    # AQUI: Em produção, enviar email com o link
-    # reset_link = f"http://localhost:3001/reset-password?token={raw_token}"
-    # send_email(user.email, "Recuperação de Senha", reset_link)
-    
-    # POR ENQUANTO: Log do token (REMOVER EM PRODUÇÃO!)
-    print(f"\n{'='*60}")
-    print(f"🔐 TOKEN DE RECUPERAÇÃO PARA: {user.email}")
-    print(f"Token: {raw_token}")
-    print(f"Link: http://localhost:3001/reset-password?token={raw_token}")
-    print(f"Válido até: {reset_token.expires_at}")
-    print(f"{'='*60}\n")
-    
     return {
-        "message": "Se o email existir no sistema, você receberá um link de recuperação.",
-        "dev_token": raw_token  # REMOVER EM PRODUÇÃO!
+        "message": "Se o email existir no sistema, você receberá um link de recuperação."
     }
 
 
-@router.post("/reset-password")
+@router.post("/reset-password", response_model=PasswordResetResponse)
 def reset_password_with_token(
-    token: str = Form(...),
-    new_password: str = Form(...),
+    request: ResetPasswordRequest,
     db: Session = Depends(get_db)
 ):
     """
@@ -429,14 +443,14 @@ def reset_password_with_token(
     from app.core.security import get_password_hash
     
     # Validar nova senha
-    if len(new_password) < 6:
+    if len(request.new_password) < 6:
         raise HTTPException(
             status_code=400,
             detail="A senha deve ter pelo menos 6 caracteres"
         )
     
     # Hash do token recebido
-    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    token_hash = hashlib.sha256(request.token.encode()).hexdigest()
     
     # Buscar token
     reset_token = db.query(PasswordResetToken).filter(
@@ -465,7 +479,7 @@ def reset_password_with_token(
         )
     
     # Atualizar senha
-    user.hashed_password = get_password_hash(new_password)
+    user.hashed_password = get_password_hash(request.new_password)
     
     # Marcar token como usado
     reset_token.is_used = True
