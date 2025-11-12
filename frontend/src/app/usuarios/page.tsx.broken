@@ -1,4 +1,5 @@
 'use client';
+
 import { useState, useEffect } from 'react';
 import { UserCog, Building2, Shield, Edit, Trash2, Plus, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -28,6 +29,7 @@ export default function UsersManagementPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string>('');
 
+  // Form states
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
@@ -45,6 +47,7 @@ export default function UsersManagementPage() {
     try {
       const token = localStorage.getItem('access_token');
       
+      // Verificar role do usuário atual
       const meResponse = await fetch('http://localhost:8888/api/v1/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -54,6 +57,7 @@ export default function UsersManagementPage() {
         setCurrentUserRole(userData.role);
       }
       
+      // Carregar usuários
       const usersResponse = await fetch('http://localhost:8888/api/v1/users-management/', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -63,6 +67,7 @@ export default function UsersManagementPage() {
         setUsers(usersData);
       }
       
+      // Carregar organizações (se for super admin)
       const orgsResponse = await fetch('http://localhost:8888/api/v1/organizations/', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -96,7 +101,7 @@ export default function UsersManagementPage() {
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`http://localhost:8888/api/v1/users-management/${editingUser.id}`, {
+      const response = await fetch(`http://localhost:8888/api/v1/users-management//${editingUser.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -108,6 +113,7 @@ export default function UsersManagementPage() {
       if (response.ok) {
         alert('Usuário atualizado com sucesso!');
         setShowEditModal(false);
+        setEditingUser(null);
         loadData();
       } else {
         const error = await response.json();
@@ -119,12 +125,12 @@ export default function UsersManagementPage() {
     }
   };
 
-  const handleDelete = async (userId: string) => {
-    if (!confirm('Tem certeza que deseja deletar este usuário?')) return;
+  const handleDelete = async (userId: string, userName: string) => {
+    if (!confirm(`Deseja realmente deletar o usuário ${userName}?`)) return;
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`http://localhost:8888/api/v1/users-management/${userId}`, {
+      const response = await fetch(`http://localhost:8888/api/v1/users-management//${userId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -142,6 +148,7 @@ export default function UsersManagementPage() {
     }
   };
 
+  if (isLoading) {
   const handleCreate = async () => {
     try {
       const token = localStorage.getItem('access_token');
@@ -154,7 +161,7 @@ export default function UsersManagementPage() {
         },
         body: JSON.stringify({
           ...formData,
-          password: 'Senha123!'
+          password: 'Senha123!' // Senha temporária
         })
       });
 
@@ -180,13 +187,139 @@ export default function UsersManagementPage() {
     }
   };
 
-  if (isLoading) {
+
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Carregando...</p>
         </div>
+
+      {/* Modal de Criação */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Criar Novo Usuário</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nome Completo
+                </label>
+                <input
+                  type="text"
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email de Recuperação *
+                </label>
+                <input
+                  type="email"
+                  value={formData.recovery_email}
+                  onChange={(e) => setFormData({...formData, recovery_email: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                  placeholder="email.recuperacao@exemplo.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Perfil
+                </label>
+                <select
+                  value={formData.role}
+                  onChange={(e) => setFormData({...formData, role: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  {currentUserRole === 'super_admin' && (
+                    <option value="super_admin">Super Admin</option>
+                  )}
+                  <option value="admin">Admin</option>
+                  <option value="user">Usuário</option>
+                </select>
+              </div>
+
+              {currentUserRole === 'super_admin' && organizations.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Organização
+                  </label>
+                  <select
+                    value={formData.organization_id}
+                    onChange={(e) => setFormData({...formData, organization_id: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Selecione uma organização</option>
+                    {organizations.map(org => (
+                      <option key={org.id} value={org.id}>{org.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={formData.is_active}
+                  onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <label className="ml-2 text-sm text-gray-700">
+                  Usuário Ativo
+                </label>
+              </div>
+
+              <p className="text-sm text-gray-500">
+                ⚠️ Senha temporária: <strong>Senha123!</strong><br/>
+                O usuário deverá alterar após o primeiro login.
+              </p>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleCreate}
+                className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+              >
+                Criar
+              </button>
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setFormData({
+                    full_name: '',
+                    email: '',
+                    recovery_email: '',
+                    role: 'user',
+                    organization_id: '',
+                    is_active: true
+                  });
+                }}
+                className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     );
   }
@@ -215,6 +348,7 @@ export default function UsersManagementPage() {
           
           <button
             onClick={() => {
+              console.log("Botão clicado!");
               setFormData({
                 full_name: '',
                 email: '',
@@ -240,7 +374,7 @@ export default function UsersManagementPage() {
                   Usuário
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Login
+                  Email
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Perfil
@@ -302,7 +436,7 @@ export default function UsersManagementPage() {
                       <Edit className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={() => handleDelete(user.id)}
+                      onClick={() => handleDelete(user.id, user.full_name)}
                       className="text-red-600 hover:text-red-900"
                     >
                       <Trash2 className="w-5 h-5" />
@@ -313,218 +447,104 @@ export default function UsersManagementPage() {
             </tbody>
           </table>
         </div>
-
-        {/* Modal de Criação */}
-        {showCreateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-              <h2 className="text-xl font-bold mb-4">Criar Novo Usuário</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nome Completo *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.full_name}
-                    onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Login/Usuário *
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email de Recuperação *
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.recovery_email}
-                    onChange={(e) => setFormData({...formData, recovery_email: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    required
-                    placeholder="email.recuperacao@exemplo.com"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Perfil *
-                  </label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({...formData, role: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    {currentUserRole === 'super_admin' && (
-                      <option value="super_admin">Super Admin</option>
-                    )}
-                    <option value="admin">Admin</option>
-                    <option value="user">Usuário</option>
-                  </select>
-                </div>
-
-                {currentUserRole === 'super_admin' && organizations.length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Organização
-                    </label>
-                    <select
-                      value={formData.organization_id}
-                      onChange={(e) => setFormData({...formData, organization_id: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Selecione uma organização</option>
-                      {organizations.map(org => (
-                        <option key={org.id} value={org.id}>{org.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_active}
-                    onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
-                    className="w-4 h-4 text-blue-600"
-                  />
-                  <label className="ml-2 text-sm text-gray-700">
-                    Usuário Ativo
-                  </label>
-                </div>
-
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                  <p className="text-sm text-yellow-800">
-                    ⚠️ Senha temporária: <strong>Senha123!</strong><br/>
-                    O usuário deverá alterar após o primeiro login.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={handleCreate}
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
-                >
-                  Criar
-                </button>
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Modal de Edição */}
-        {showEditModal && editingUser && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md">
-              <h2 className="text-xl font-bold mb-4">Editar Usuário</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nome Completo
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.full_name}
-                    onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email de Recuperação
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.recovery_email}
-                    onChange={(e) => setFormData({...formData, recovery_email: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Perfil
-                  </label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({...formData, role: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    {currentUserRole === 'super_admin' && (
-                      <option value="super_admin">Super Admin</option>
-                    )}
-                    <option value="admin">Admin</option>
-                    <option value="user">Usuário</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_active}
-                    onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
-                    className="w-4 h-4 text-blue-600"
-                  />
-                  <label className="ml-2 text-sm text-gray-700">
-                    Usuário Ativo
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={handleSave}
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
-                >
-                  Salvar
-                </button>
-                <button
-                  onClick={() => setShowEditModal(false)}
-                  className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Modal de Edição */}
+      {showEditModal && editingUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">Editar Usuário</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nome Completo
+                </label>
+                <input
+                  type="text"
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email de Recuperação *
+                </label>
+                <input
+                  type="email"
+                  value={formData.recovery_email}
+                  onChange={(e) => setFormData({...formData, recovery_email: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                  placeholder="email.recuperacao@exemplo.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Perfil
+                </label>
+                <select
+                  value={formData.role}
+                  onChange={(e) => setFormData({...formData, role: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  {currentUserRole === 'super_admin' && (
+                    <option value="super_admin">Super Admin</option>
+                  )}
+                  <option value="admin">Admin</option>
+                  <option value="user">Usuário</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Usuário Ativo</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleSave}
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              >
+                Salvar
+              </button>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingUser(null);
+                }}
+                className="flex-1 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
