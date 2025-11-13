@@ -78,25 +78,20 @@ def list_patients(
     is_active: Optional[bool] = None,
     search: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
 ):
     """
-    Listar pacientes:
-    - Super admin vê todos (pode filtrar por organização)
-    - Admin/User vê apenas da própria organização
+    🔓 SEM AUTENTICAÇÃO - Lista todos os pacientes
+    Pode filtrar por:
+    - organization_id: Filtrar por organização específica
+    - is_active: Filtrar por status ativo/inativo
+    - search: Buscar por nome, CPF ou telefone
     """
     
     query = db.query(Patient)
     
-    # Super admin vê todos
-    if current_user.role == 'super_admin':
-        if organization_id:
-            query = query.filter(Patient.organization_id == organization_id)
-    # Admin e User veem só da própria organização
-    else:
-        if not current_user.organization_id:
-            raise HTTPException(status_code=403, detail="Usuário sem organização")
-        query = query.filter(Patient.organization_id == current_user.organization_id)
+    # Filtro por organização (opcional)
+    if organization_id:
+        query = query.filter(Patient.organization_id == organization_id)
     
     # Filtros
     if is_active is not None:
@@ -143,13 +138,18 @@ def list_patients(
 @router.post("/", response_model=PatientResponse)
 def create_patient(
     patient_data: PatientCreate,
+    organization_id: UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
 ):
-    """Criar novo paciente na organização do usuário"""
+    """
+    🔓 SEM AUTENTICAÇÃO - Criar novo paciente
+    REQUER: organization_id no corpo da requisição
+    """
     
-    if not current_user.organization_id:
-        raise HTTPException(status_code=403, detail="Usuário sem organização")
+    # Verificar se a organização existe
+    org = db.query(Organization).filter(Organization.id == organization_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organização não encontrada")
     
     # Verificar CPF duplicado
     if patient_data.cpf:
@@ -159,7 +159,7 @@ def create_patient(
     
     # Criar paciente
     new_patient = Patient(
-        organization_id=current_user.organization_id,
+        organization_id=organization_id,
         **patient_data.dict()
     )
     
@@ -167,12 +167,10 @@ def create_patient(
     db.commit()
     db.refresh(new_patient)
     
-    org = db.query(Organization).filter(Organization.id == new_patient.organization_id).first()
-    
     return PatientResponse(
         id=new_patient.id,
         organization_id=new_patient.organization_id,
-        organization_name=org.name if org else None,
+        organization_name=org.name,
         full_name=new_patient.full_name,
         cpf=new_patient.cpf,
         rg=new_patient.rg,
@@ -193,38 +191,30 @@ def create_patient(
 
 @router.get("/statistics")
 def get_statistics(
+    organization_id: Optional[UUID] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
 ):
-    """Estatísticas de pacientes por organização"""
+    """
+    🔓 SEM AUTENTICAÇÃO - Estatísticas de pacientes
+    Pode filtrar por organization_id específica
+    """
     
     from sqlalchemy import func, case
     
-    # Super admin vê todas
-    if current_user.role == 'super_admin':
-        stats = db.query(
-            Organization.id,
-            Organization.name,
-            func.count(Patient.id).label('total_patients'),
-            func.sum(case((Patient.is_active == True, 1), else_=0)).label('active_patients')
-        ).outerjoin(
-            Patient, Patient.organization_id == Organization.id
-        ).group_by(Organization.id, Organization.name).all()
-    else:
-        # Admin/User vê só sua org
-        if not current_user.organization_id:
-            raise HTTPException(status_code=403, detail="Usuário sem organização")
-        
-        stats = db.query(
-            Organization.id,
-            Organization.name,
-            func.count(Patient.id).label('total_patients'),
-            func.sum(case((Patient.is_active == True, 1), else_=0)).label('active_patients')
-        ).outerjoin(
-            Patient, Patient.organization_id == Organization.id
-        ).filter(
-            Organization.id == current_user.organization_id
-        ).group_by(Organization.id, Organization.name).all()
+    # Estatísticas de todas as organizações ou filtrada
+    query = db.query(
+        Organization.id,
+        Organization.name,
+        func.count(Patient.id).label('total_patients'),
+        func.sum(case((Patient.is_active == True, 1), else_=0)).label('active_patients')
+    ).outerjoin(
+        Patient, Patient.organization_id == Organization.id
+    )
+    
+    if organization_id:
+        query = query.filter(Organization.id == organization_id)
+    
+    stats = query.group_by(Organization.id, Organization.name).all()
     
     result = []
     for org_id, org_name, total, active in stats:
