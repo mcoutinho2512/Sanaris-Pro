@@ -89,10 +89,10 @@ def create_user(
             raise HTTPException(status_code=403, detail="Admin só pode criar na própria organização")
         user_data.organization_id = current_user.organization_id
     
-    if db.query(User).filter(User.email == user_data.email).first():
+    if db.query(User).filter(User.email == user_data.email, User.is_active == True).first():
         raise HTTPException(status_code=400, detail="Login já cadastrado")
     
-    if db.query(User).filter(User.recovery_email == user_data.recovery_email).first():
+    if db.query(User).filter(User.recovery_email == user_data.recovery_email, User.is_active == True).first():
         raise HTTPException(status_code=400, detail="Email de recuperação já cadastrado")
     
     new_user = User(
@@ -218,7 +218,13 @@ def delete_user(
     if current_user.role == 'admin' and user.organization_id != current_user.organization_id:
         raise HTTPException(status_code=403, detail="Sem permissão")
     
+    # Renomear email/recovery_email para liberar para reuso
+    timestamp = datetime.utcnow().isoformat()
+    user.email = f"{user.email}_deleted_{timestamp}"
+    user.recovery_email = f"{user.recovery_email}_deleted_{timestamp}"
+    user.recovery_email = f"{user.recovery_email}_deleted_{timestamp}"
     user.is_active = False
+    
     db.commit()
     
     return {"message": "Usuário desativado com sucesso"}
