@@ -1,45 +1,59 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Pill, Plus, Eye, FileText, CheckCircle } from 'lucide-react';
-import { prescriptionsService, Prescription } from '@/services/prescriptions.service';
-import { patientsService, Patient } from '@/services/patients.service';
+import { Pill, Plus, Eye, Edit, ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
+interface Prescription {
+  id: string;
+  patient_id: string;
+  prescription_date: string;
+  general_instructions?: string;
+  is_signed: boolean;
+}
+
+interface Patient {
+  id: string;
+  full_name: string;
+}
 
 export default function PrescricoesPage() {
+  const router = useRouter();
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [patients, setPatients] = useState<Record<string, Patient>>({});
   const [loading, setLoading] = useState(true);
-  const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showNewModal, setShowNewModal] = useState(false);
+  
+  const [newPrescription, setNewPrescription] = useState({
+    patient_id: '',
+    prescription_type: 'simple',
+    general_instructions: '',
+    medication_name: '',
+    dosage: '',
+    frequency: '',
+    duration: ''
+  });
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const handleView = async (prescription: Prescription) => {
-    try {
-      // Buscar detalhes completos
-      const fullPrescription = await prescriptionsService.get(prescription.id);
-      setSelectedPrescription(fullPrescription);
-      setShowDetailsModal(true);
-    } catch (error) {
-      console.error('Erro ao buscar prescrição:', error);
-      alert('Erro ao carregar prescrição');
-    }
-  };
-
   const loadData = async () => {
     try {
       setLoading(true);
       
-      // Carregar prescrições
-      const prescriptionsData = await prescriptionsService.list({ limit: 50 });
+      const prescriptionsRes = await fetch('http://localhost:8888/api/v1/prescriptions/', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      const prescriptionsData = await prescriptionsRes.json();
       setPrescriptions(prescriptionsData);
       
-      // Carregar pacientes
-      const patientsData = await patientsService.list();
+      const patientsRes = await fetch('http://localhost:8888/api/v1/patients/', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      const patientsData = await patientsRes.json();
       const patientsMap: Record<string, Patient> = {};
-      patientsData.forEach(p => patientsMap[p.id] = p);
+      patientsData.forEach((p: Patient) => patientsMap[p.id] = p);
       setPatients(patientsMap);
       
     } catch (error) {
@@ -49,8 +63,56 @@ export default function PrescricoesPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+  const handleCreatePrescription = async () => {
+    if (!newPrescription.patient_id || !newPrescription.medication_name) {
+      alert('Preencha paciente e medicamento!');
+      return;
+    }
+
+    try {
+      const payload = {
+        patient_id: newPrescription.patient_id,
+        prescription_type: newPrescription.prescription_type,
+        general_instructions: newPrescription.general_instructions,
+        items: [
+          {
+            medication_name: newPrescription.medication_name,
+            dosage: newPrescription.dosage,
+            frequency: newPrescription.frequency,
+            duration: newPrescription.duration,
+            is_generic: true,
+            is_controlled: false
+          }
+        ]
+      };
+
+      const response = await fetch('http://localhost:8888/api/v1/prescriptions/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error('Erro ao criar prescrição');
+
+      alert('Prescrição criada com sucesso!');
+      setShowNewModal(false);
+      setNewPrescription({
+        patient_id: '',
+        prescription_type: 'simple',
+        general_instructions: '',
+        medication_name: '',
+        dosage: '',
+        frequency: '',
+        duration: ''
+      });
+      loadData();
+    } catch (error: any) {
+      console.error('Erro ao criar prescrição:', error);
+      alert('Erro ao criar prescrição');
+    }
   };
 
   if (loading) {
@@ -66,154 +128,24 @@ export default function PrescricoesPage() {
 
   return (
     <div className="p-6">
-      {/* Header */}
+      <div className="mb-4">
+        <button onClick={() => router.push('/')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+          <ArrowLeft className="w-5 h-5" />
+          <span>Voltar ao Dashboard</span>
+        </button>
+      </div>
+
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Prescrições Digitais</h1>
+          <h1 className="text-2xl font-bold">Prescrições Médicas</h1>
           <p className="text-gray-600 mt-1">{prescriptions.length} prescrição(ões)</p>
         </div>
-        <button
-          onClick={() => alert('Formulário de nova prescrição em desenvolvimento')}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
-        >
+        <button onClick={() => setShowNewModal(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
           <Plus size={20} />
           Nova Prescrição
         </button>
       </div>
 
-      {/* Modal de Detalhes */}
-      {showDetailsModal && selectedPrescription && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg w-full max-w-4xl h-[90vh] flex flex-col">
-            {/* Header */}
-            <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-center">
-              <h2 className="text-xl font-bold">Prescrição Médica</h2>
-              <button
-                onClick={() => setShowDetailsModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Conteúdo */}
-            <div className="p-6 space-y-6 overflow-y-scroll flex-1" style={{maxHeight: "calc(90vh - 180px)"}}>
-              {/* Informações do Paciente */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3 text-blue-600">Paciente</h3>
-                <p className="text-gray-700 font-medium">
-                  {patients[selectedPrescription.patient_id]?.full_name || 'Não encontrado'}
-                </p>
-              </div>
-
-              {/* Informações da Prescrição */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3 text-blue-600">Dados da Prescrição</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium">Data:</span>{' '}
-                    {formatDate(selectedPrescription.prescription_date)}
-                  </div>
-                  {selectedPrescription.valid_until && (
-                    <div>
-                      <span className="font-medium">Válida até:</span>{' '}
-                      {formatDate(selectedPrescription.valid_until)}
-                    </div>
-                  )}
-                  {selectedPrescription.crm_number && (
-                    <div>
-                      <span className="font-medium">CRM:</span>{' '}
-                      {selectedPrescription.crm_number}-{selectedPrescription.crm_state}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Medicamentos */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3 text-blue-600">Medicamentos Prescritos</h3>
-                <div className="space-y-4">
-                  {selectedPrescription.items.map((item, index) => (
-                    <div key={item.id || index} className="border-l-4 border-blue-400 pl-4 py-2 bg-blue-50 rounded">
-                      <div className="font-semibold text-gray-900 mb-2">
-                        {index + 1}. {item.medication_name}
-                        {item.concentration && ` - ${item.concentration}`}
-                      </div>
-                      
-                      <div className="text-sm space-y-1 text-gray-700">
-                        {item.pharmaceutical_form && (
-                          <div><span className="font-medium">Forma:</span> {item.pharmaceutical_form}</div>
-                        )}
-                        
-                        <div><span className="font-medium">Posologia:</span> {item.dosage}</div>
-                        <div><span className="font-medium">Frequência:</span> {item.frequency}</div>
-                        
-                        {item.duration && (
-                          <div><span className="font-medium">Duração:</span> {item.duration}</div>
-                        )}
-                        
-                        {item.route_of_administration && (
-                          <div><span className="font-medium">Via:</span> {item.route_of_administration}</div>
-                        )}
-                        
-                        {item.quantity && (
-                          <div>
-                            <span className="font-medium">Quantidade:</span> {item.quantity} {item.quantity_unit || 'unidades'}
-                          </div>
-                        )}
-                        
-                        {item.instructions && (
-                          <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                            <span className="font-medium">⚠️ Instruções:</span> {item.instructions}
-                          </div>
-                        )}
-                        
-                        {item.is_generic && (
-                          <div className="text-green-600 text-xs mt-1">✓ Aceita genérico</div>
-                        )}
-                        
-                        {item.is_controlled && (
-                          <div className="text-red-600 text-xs mt-1">🔒 Medicamento controlado</div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Instruções Gerais */}
-              {selectedPrescription.general_instructions && (
-                <div>
-                  <h3 className="text-lg font-semibold mb-2 text-blue-600">Instruções Gerais</h3>
-                  <p className="text-gray-700 whitespace-pre-wrap bg-gray-50 p-4 rounded">
-                    {selectedPrescription.general_instructions}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="sticky bottom-0 bg-gray-50 border-t p-4 flex justify-end gap-2">
-              <button
-                onClick={() => setShowDetailsModal(false)}
-                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
-              >
-                Fechar
-              </button>
-              {selectedPrescription.is_signed && (
-                <button
-                  onClick={() => alert('Impressão em desenvolvimento')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Imprimir
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Lista de Prescrições */}
       <div className="space-y-4">
         {prescriptions.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-12 text-center text-gray-500">
@@ -222,76 +154,35 @@ export default function PrescricoesPage() {
         ) : (
           prescriptions.map((prescription) => {
             const patient = patients[prescription.patient_id];
-            const itemsCount = (prescription as any).items_count || prescription.items?.length || 0;
-
+            const date = new Date(prescription.prescription_date).toLocaleDateString('pt-BR');
+            
             return (
               <div key={prescription.id} className="bg-white rounded-lg shadow p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <Pill className="text-gray-400" size={20} />
-                      <h3 className="text-lg font-semibold">
-                        {patient?.full_name || 'Paciente não encontrado'}
-                      </h3>
-                      {prescription.is_signed && (
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 flex items-center gap-1">
-                          <CheckCircle size={14} />
-                          Assinada
-                        </span>
-                      )}
-                      {prescription.is_printed && (
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                          Impressa
-                        </span>
-                      )}
-                      {prescription.is_dispensed && (
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
-                          Dispensada
-                        </span>
+                      <h3 className="text-lg font-semibold">{patient?.full_name || 'Paciente não encontrado'}</h3>
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${prescription.is_signed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                        {prescription.is_signed ? 'Assinada' : 'Pendente'}
+                      </span>
+                    </div>
+                    <div className="ml-8 space-y-1">
+                      <p className="text-sm text-gray-600"><span className="font-medium">Data:</span> {date}</p>
+                      {prescription.general_instructions && (
+                        <p className="text-sm text-gray-600"><span className="font-medium">Instruções:</span> {prescription.general_instructions}</p>
                       )}
                     </div>
-
-                    <div className="flex items-center gap-6 text-sm text-gray-600 ml-8">
-                      <div>
-                        <span className="font-medium">Data:</span> {formatDate(prescription.prescription_date)}
-                      </div>
-                      <div>
-                        <span className="font-medium">Medicamentos:</span> {itemsCount}
-                      </div>
-                      {prescription.valid_until && (
-                        <div>
-                          <span className="font-medium">Válida até:</span> {formatDate(prescription.valid_until)}
-                        </div>
-                      )}
-                    </div>
-
-                    {prescription.general_instructions && (
-                      <div className="mt-2 ml-8 text-sm text-gray-600">
-                        <span className="font-medium">Instruções:</span> {prescription.general_instructions}
-                      </div>
-                    )}
                   </div>
-
-                  {/* Ações */}
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => handleView(prescription)}
-                      className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition flex items-center gap-2"
-                      title="Ver prescrição"
-                    >
+                    <button className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition flex items-center gap-2">
                       <Eye size={16} />
-                      Ver
+                      Ver Detalhes
                     </button>
-                    {prescription.is_signed && (
-                      <button
-                        onClick={() => alert('Impressão em desenvolvimento')}
-                        className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center gap-2"
-                        title="Imprimir"
-                      >
-                        <FileText size={16} />
-                        Imprimir
-                      </button>
-                    )}
+                    <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center gap-2">
+                      <Edit size={16} />
+                      Editar
+                    </button>
                   </div>
                 </div>
               </div>
@@ -299,6 +190,102 @@ export default function PrescricoesPage() {
           })
         )}
       </div>
+
+      {showNewModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-2xl">
+            <h2 className="text-2xl font-bold mb-6">Nova Prescrição</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Paciente *</label>
+                <select 
+                  value={newPrescription.patient_id}
+                  onChange={(e) => setNewPrescription({...newPrescription, patient_id: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                >
+                  <option value="">Selecione um paciente</option>
+                  {Object.values(patients).map(patient => (
+                    <option key={patient.id} value={patient.id}>{patient.full_name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="font-semibold mb-3">Medicamento</h3>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Nome do Medicamento *</label>
+                    <input 
+                      type="text"
+                      value={newPrescription.medication_name}
+                      onChange={(e) => setNewPrescription({...newPrescription, medication_name: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" 
+                      placeholder="Ex: Dipirona 500mg"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Dosagem</label>
+                      <input 
+                        type="text"
+                        value={newPrescription.dosage}
+                        onChange={(e) => setNewPrescription({...newPrescription, dosage: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" 
+                        placeholder="Ex: 1 comprimido"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Frequência</label>
+                      <input 
+                        type="text"
+                        value={newPrescription.frequency}
+                        onChange={(e) => setNewPrescription({...newPrescription, frequency: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" 
+                        placeholder="Ex: a cada 6 horas"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Duração</label>
+                    <input 
+                      type="text"
+                      value={newPrescription.duration}
+                      onChange={(e) => setNewPrescription({...newPrescription, duration: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" 
+                      placeholder="Ex: 7 dias"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Instruções Gerais</label>
+                <textarea 
+                  rows={2}
+                  value={newPrescription.general_instructions}
+                  onChange={(e) => setNewPrescription({...newPrescription, general_instructions: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" 
+                  placeholder="Ex: Tomar após as refeições"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button onClick={() => setShowNewModal(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                Cancelar
+              </button>
+              <button onClick={handleCreatePrescription} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                Criar Prescrição
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

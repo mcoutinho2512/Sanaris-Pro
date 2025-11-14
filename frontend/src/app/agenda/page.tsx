@@ -15,6 +15,14 @@ export default function AgendaPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [showNewModal, setShowNewModal] = useState(false);
+  
+  // Formulário de novo agendamento
+  const [newAppointment, setNewAppointment] = useState({
+    patient_id: '',
+    scheduled_date: '',
+    duration_minutes: 30,
+    reason: ''
+  });
 
   useEffect(() => {
     loadData();
@@ -23,6 +31,7 @@ export default function AgendaPage() {
   const loadData = async () => {
     try {
       setLoading(true);
+      
       const filters: any = {};
       if (statusFilter) filters.status_filter = statusFilter;
       if (dateFrom) filters.date_from = dateFrom;
@@ -35,10 +44,29 @@ export default function AgendaPage() {
       const patientsMap: Record<string, Patient> = {};
       patientsData.forEach(p => patientsMap[p.id] = p);
       setPatients(patientsMap);
+      
     } catch (error) {
       console.error('Erro ao carregar agenda:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateAppointment = async () => {
+    if (!newAppointment.patient_id || !newAppointment.scheduled_date) {
+      alert('Preencha paciente e data/hora!');
+      return;
+    }
+
+    try {
+      await appointmentsService.create(newAppointment);
+      alert('Agendamento criado com sucesso!');
+      setShowNewModal(false);
+      setNewAppointment({ patient_id: '', scheduled_date: '', duration_minutes: 30, reason: '' });
+      loadData();
+    } catch (error: any) {
+      console.error('Erro ao criar agendamento:', error);
+      alert(error.response?.data?.detail || 'Erro ao criar agendamento');
     }
   };
 
@@ -260,32 +288,61 @@ export default function AgendaPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-lg">
             <h2 className="text-2xl font-bold mb-6">Novo Agendamento</h2>
+            
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Paciente</label>
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Paciente *</label>
+                <select 
+                  value={newAppointment.patient_id}
+                  onChange={(e) => setNewAppointment({...newAppointment, patient_id: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                >
                   <option value="">Selecione um paciente</option>
                   {Object.values(patients).map(patient => (
                     <option key={patient.id} value={patient.id}>{patient.full_name}</option>
                   ))}
                 </select>
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Data e Hora</label>
-                <input type="datetime-local" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Data e Hora *</label>
+                <input 
+                  type="datetime-local" 
+                  value={newAppointment.scheduled_date}
+                  onChange={(e) => setNewAppointment({...newAppointment, scheduled_date: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" 
+                />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Duração (minutos)</label>
-                <input type="number" defaultValue={30} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" />
+                <input 
+                  type="number" 
+                  value={newAppointment.duration_minutes}
+                  onChange={(e) => setNewAppointment({...newAppointment, duration_minutes: parseInt(e.target.value)})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" 
+                />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Motivo da Consulta</label>
-                <textarea rows={3} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" placeholder="Descreva o motivo da consulta..." />
+                <textarea 
+                  rows={3} 
+                  value={newAppointment.reason}
+                  onChange={(e) => setNewAppointment({...newAppointment, reason: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" 
+                  placeholder="Descreva o motivo da consulta..." 
+                />
               </div>
             </div>
+
             <div className="flex gap-2 mt-6">
-              <button onClick={() => setShowNewModal(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
-              <button onClick={() => { alert('Funcionalidade de criar agendamento será implementada em breve!'); setShowNewModal(false); }} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Agendar</button>
+              <button onClick={() => setShowNewModal(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                Cancelar
+              </button>
+              <button onClick={handleCreateAppointment} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                Agendar
+              </button>
             </div>
           </div>
         </div>
