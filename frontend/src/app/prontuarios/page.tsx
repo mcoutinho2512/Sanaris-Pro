@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FileText, Plus, Eye, Edit, ArrowLeft } from 'lucide-react';
+import { FileText, Plus, Eye, Edit, Trash2, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface MedicalRecord {
@@ -24,8 +24,18 @@ export default function ProntuariosPage() {
   const [patients, setPatients] = useState<Record<string, Patient>>({});
   const [loading, setLoading] = useState(true);
   const [showNewModal, setShowNewModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<MedicalRecord | null>(null);
   
   const [newRecord, setNewRecord] = useState({
+    patient_id: '',
+    chief_complaint: '',
+    diagnosis: ''
+  });
+
+  const [editRecord, setEditRecord] = useState({
+    id: '',
     patient_id: '',
     chief_complaint: '',
     diagnosis: ''
@@ -60,6 +70,21 @@ export default function ProntuariosPage() {
     }
   };
 
+  const handleViewDetails = (record: MedicalRecord) => {
+    setSelectedRecord(record);
+    setShowDetailsModal(true);
+  };
+
+  const handleEdit = (record: MedicalRecord) => {
+    setEditRecord({
+      id: record.id,
+      patient_id: record.patient_id,
+      chief_complaint: record.chief_complaint,
+      diagnosis: record.diagnosis || ''
+    });
+    setShowEditModal(true);
+  };
+
   const handleCreateRecord = async () => {
     if (!newRecord.patient_id || !newRecord.chief_complaint) {
       alert('Preencha paciente e queixa principal!');
@@ -85,6 +110,54 @@ export default function ProntuariosPage() {
     } catch (error: any) {
       console.error('Erro ao criar prontuário:', error);
       alert('Erro ao criar prontuário');
+    }
+  };
+
+  const handleUpdateRecord = async () => {
+    if (!editRecord.chief_complaint) {
+      alert('Preencha a queixa principal!');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8888/api/v1/medical-records/${editRecord.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          chief_complaint: editRecord.chief_complaint,
+          diagnosis: editRecord.diagnosis
+        })
+      });
+
+      if (!response.ok) throw new Error('Erro ao atualizar prontuário');
+
+      alert('Prontuário atualizado com sucesso!');
+      setShowEditModal(false);
+      loadData();
+    } catch (error: any) {
+      console.error('Erro ao atualizar prontuário:', error);
+      alert('Erro ao atualizar prontuário');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este prontuário?')) return;
+
+    try {
+      const response = await fetch(`http://localhost:8888/api/v1/medical-records/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+
+      if (!response.ok) throw new Error('Erro ao excluir');
+
+      alert('Prontuário excluído com sucesso!');
+      loadData();
+    } catch (error) {
+      alert('Erro ao excluir prontuário');
     }
   };
 
@@ -147,13 +220,17 @@ export default function ProntuariosPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition flex items-center gap-2">
+                    <button onClick={() => handleViewDetails(record)} className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition flex items-center gap-2">
                       <Eye size={16} />
                       Ver Detalhes
                     </button>
-                    <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center gap-2">
+                    <button onClick={() => handleEdit(record)} className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center gap-2">
                       <Edit size={16} />
                       Editar
+                    </button>
+                    <button onClick={() => handleDelete(record.id)} className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition flex items-center gap-2">
+                      <Trash2 size={16} />
+                      Excluir
                     </button>
                   </div>
                 </div>
@@ -163,6 +240,7 @@ export default function ProntuariosPage() {
         )}
       </div>
 
+      {/* Modal Novo Prontuário */}
       {showNewModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-2xl">
@@ -212,6 +290,117 @@ export default function ProntuariosPage() {
               </button>
               <button onClick={handleCreateRecord} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
                 Criar Prontuário
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Detalhes */}
+      {showDetailsModal && selectedRecord && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h2 className="text-2xl font-bold">Detalhes do Prontuário</h2>
+                <p className="text-gray-600 mt-1">
+                  {patients[selectedRecord.patient_id]?.full_name}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="border-b pb-3">
+                <h3 className="font-semibold text-gray-700 mb-1">Data da Consulta</h3>
+                <p className="text-gray-900">
+                  {new Date(selectedRecord.created_at).toLocaleDateString('pt-BR')}
+                </p>
+              </div>
+
+              <div className="border-b pb-3">
+                <h3 className="font-semibold text-gray-700 mb-1">Queixa Principal</h3>
+                <p className="text-gray-900 whitespace-pre-wrap">{selectedRecord.chief_complaint}</p>
+              </div>
+
+              {selectedRecord.diagnosis && (
+                <div className="border-b pb-3">
+                  <h3 className="font-semibold text-gray-700 mb-1">Diagnóstico</h3>
+                  <p className="text-gray-900 whitespace-pre-wrap">{selectedRecord.diagnosis}</p>
+                </div>
+              )}
+
+              <div className="border-b pb-3">
+                <h3 className="font-semibold text-gray-700 mb-1">ID do Prontuário</h3>
+                <p className="text-gray-600 text-sm font-mono">{selectedRecord.id}</p>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Edição */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-2xl">
+            <h2 className="text-2xl font-bold mb-6">Editar Prontuário</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Paciente</label>
+                <input
+                  type="text"
+                  value={patients[editRecord.patient_id]?.full_name || ''}
+                  disabled
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Queixa Principal *</label>
+                <textarea 
+                  rows={3}
+                  value={editRecord.chief_complaint}
+                  onChange={(e) => setEditRecord({...editRecord, chief_complaint: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" 
+                  placeholder="Descreva a queixa principal do paciente..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Diagnóstico</label>
+                <textarea 
+                  rows={3}
+                  value={editRecord.diagnosis}
+                  onChange={(e) => setEditRecord({...editRecord, diagnosis: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" 
+                  placeholder="Diagnóstico (opcional)"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button onClick={() => setShowEditModal(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                Cancelar
+              </button>
+              <button onClick={handleUpdateRecord} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                Salvar Alterações
               </button>
             </div>
           </div>
