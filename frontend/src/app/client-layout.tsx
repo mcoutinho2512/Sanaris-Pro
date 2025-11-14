@@ -33,7 +33,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const token = localStorage.getItem('access_token');
+        const token = localStorage.getItem('token');
         if (!token) {
           router.push('/login');
           return;
@@ -55,7 +55,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
         if (modulesResponse.ok) {
           const modulesData = await modulesResponse.json();
-          setAllowedModules(modulesData.modules || []);
+          setAllowedModules(Array.isArray(modulesData) ? modulesData : []);
         }
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
@@ -68,7 +68,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   }, [pathname, router, isPublicPage]);
 
   const handleLogout = () => {
-    localStorage.removeItem('access_token');
+    localStorage.removeItem('token');
     router.push('/login');
   };
 
@@ -98,8 +98,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   ];
 
   const visibleModules = userRole === 'super_admin' 
-    ? superAdminModules 
-    : allModules.filter(module => allowedModules.includes(module.id));
+    ? allModules  // Super admin vê tudo
+    : allModules.filter(m => !superAdminModules.find(sm => sm.id === m.id));  // Outros veem tudo exceto módulos de super admin
 
   return (
     <div className="flex h-screen bg-gray-50">

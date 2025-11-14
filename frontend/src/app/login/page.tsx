@@ -32,7 +32,7 @@ export default function LoginPage() {
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('access_token', data.access_token);
+        localStorage.setItem('token', data.access_token);
         router.push('/');
       } else {
         const data = await response.json();

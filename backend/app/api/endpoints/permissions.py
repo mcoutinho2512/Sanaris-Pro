@@ -1,167 +1,135 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
-import json
 
 from app.core.database import get_db
-from app.models.user import User
 from app.core.security import get_current_user
-from pydantic import BaseModel
+from app.models.user import User
+from app.models.permission import Permission, UserPermission
+from app.schemas.permission import (
+    PermissionResponse,
+    UserPermissionCreate,
+    UserPermissionsDetail
+)
 
 router = APIRouter()
 
-class UserPermissionsUpdate(BaseModel):
-    allowed_modules: List[str]
 
-class UserPermissionsResponse(BaseModel):
-    id: UUID
-    email: str
-    full_name: str
-    role: str
-    allowed_modules: List[str]
+@router.get("/", response_model=List[PermissionResponse])
+def list_all_permissions(db: Session = Depends(get_db)):
+    """Lista todas as permissões disponíveis no sistema"""
+    permissions = db.query(Permission).order_by(Permission.module, Permission.action).all()
+    return permissions
+
+
+@router.get("/my-permissions", response_model=List[str])
+def get_my_permissions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Retorna lista de nomes de permissões do usuário atual"""
     
-    class Config:
-        from_attributes = True
+    # Super admin tem todas as permissões
+    if current_user.role == 'super_admin':
+        all_perms = db.query(Permission.name).all()
+        return [p[0] for p in all_perms]
+    
+    # Admin tem todas menos manage_users
+    if current_user.role == 'admin':
+        all_perms = db.query(Permission.name).filter(
+            Permission.name != 'manage_users'
+        ).all()
+        return [p[0] for p in all_perms]
+    
+    # Usuários básicos: buscar permissões específicas
+    user_perms = db.query(Permission.name).join(
+        UserPermission, UserPermission.permission_id == Permission.id
+    ).filter(
+        UserPermission.user_id == current_user.id
+    ).all()
+    
+    return [p[0] for p in user_perms]
 
-# Módulos disponíveis no sistema
-AVAILABLE_MODULES = [
-    "dashboard",
-    "pacientes", 
-    "agenda",
-    "prontuarios",
-    "prescricoes",
-    "cfm",
-    "financeiro",
-    "faturamento_tiss",
-    "relatorios",
-    "configuracoes",
-    "chat"
-]
 
-@router.get("/available-modules")
-def get_available_modules():
-    """Listar módulos disponíveis para configuração"""
-    return {
-        "modules": [
-            {"id": "dashboard", "name": "Dashboard", "icon": "LayoutDashboard"},
-            {"id": "pacientes", "name": "Pacientes", "icon": "Users"},
-            {"id": "agenda", "name": "Agenda", "icon": "Calendar"},
-            {"id": "prontuarios", "name": "Prontuários", "icon": "FileText"},
-            {"id": "prescricoes", "name": "Prescrições", "icon": "FileEdit"},
-            {"id": "cfm", "name": "CFM", "icon": "Shield"},
-            {"id": "financeiro", "name": "Financeiro", "icon": "DollarSign"},
-            {"id": "faturamento_tiss", "name": "Faturamento TISS", "icon": "Receipt"},
-            {"id": "relatorios", "name": "Relatórios", "icon": "BarChart"},
-            {"id": "configuracoes", "name": "Configurações", "icon": "Settings"},
-            {"id": "chat", "name": "Chat", "icon": "MessageSquare"}
+@router.get("/my-modules", response_model=List[str])
+def get_my_modules(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Retorna lista de módulos que o usuário tem acesso"""
+    
+    # Super admin e admin têm acesso a todos
+    if current_user.role in ['super_admin', 'admin']:
+        return [
+            'patients', 'appointments', 'medical_records', 'prescriptions',
+            'chat', 'financial', 'reports', 'tiss', 'cfm', 'admin'
         ]
-    }
+    
+    # Usuários básicos: buscar módulos baseado em permissões
+    modules = db.query(Permission.module).distinct().join(
+        UserPermission, UserPermission.permission_id == Permission.id
+    ).filter(
+        UserPermission.user_id == current_user.id
+    ).all()
+    
+    return [m[0] for m in modules if m[0]]
 
-@router.get("/user/{user_id}")
-def get_user_permissions(
-    user_id: UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Obter permissões de um usuário"""
-    
-    # Apenas admin pode ver permissões de usuários da sua organização
-    if current_user.role not in ['admin', 'super_admin']:
-        raise HTTPException(status_code=403, detail="Acesso negado")
-    
+
+@router.get("/user/{user_id}", response_model=UserPermissionsDetail)
+def get_user_permissions(user_id: UUID, db: Session = Depends(get_db)):
+    """Retorna permissões de um usuário específico"""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     
-    # Admin só pode ver usuários da sua organização
-    if current_user.role == 'admin':
-        if user.organization_id != current_user.organization_id:
-            raise HTTPException(status_code=403, detail="Usuário não pertence à sua organização")
+    permissions = db.query(Permission).join(
+        UserPermission, UserPermission.permission_id == Permission.id
+    ).filter(
+        UserPermission.user_id == user_id
+    ).all()
     
-    # Parsear JSON de módulos
-    try:
-        allowed_modules = json.loads(user.allowed_modules) if user.allowed_modules else []
-    except:
-        allowed_modules = []
-    
-    return {
-        "id": user.id,
-        "email": user.email,
-        "full_name": user.full_name,
-        "role": user.role,
-        "allowed_modules": allowed_modules
-    }
+    return UserPermissionsDetail(user_id=user_id, permissions=permissions)
 
-@router.put("/user/{user_id}")
-def update_user_permissions(
+
+@router.post("/user/{user_id}", status_code=status.HTTP_201_CREATED)
+def assign_permissions_to_user(
     user_id: UUID,
-    permissions: UserPermissionsUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    permissions_data: UserPermissionCreate,
+    db: Session = Depends(get_db)
 ):
-    """Atualizar permissões de um usuário"""
-    
-    # Apenas admin pode alterar permissões
-    if current_user.role not in ['admin', 'super_admin']:
-        raise HTTPException(status_code=403, detail="Acesso negado")
-    
+    """Atribui permissões a um usuário"""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     
-    # Admin só pode alterar usuários da sua organização
-    if current_user.role == 'admin':
-        if user.organization_id != current_user.organization_id:
-            raise HTTPException(status_code=403, detail="Usuário não pertence à sua organização")
+    # Remover permissões antigas
+    db.query(UserPermission).filter(UserPermission.user_id == user_id).delete()
     
-    # Não pode alterar permissões de admin ou super_admin
-    if user.role in ['admin', 'super_admin']:
-        raise HTTPException(status_code=403, detail="Não é possível alterar permissões de administradores")
+    # Adicionar novas permissões
+    for perm_id in permissions_data.permission_ids:
+        user_perm = UserPermission(
+            user_id=user_id,
+            permission_id=perm_id,
+            granted_by_id=None
+        )
+        db.add(user_perm)
     
-    # Validar módulos
-    invalid_modules = [m for m in permissions.allowed_modules if m not in AVAILABLE_MODULES]
-    if invalid_modules:
-        raise HTTPException(status_code=400, detail=f"Módulos inválidos: {invalid_modules}")
-    
-    # Atualizar
-    user.allowed_modules = json.dumps(permissions.allowed_modules)
     db.commit()
     
     return {
-        "id": user.id,
-        "email": user.email,
-        "full_name": user.full_name,
-        "role": user.role,
-        "allowed_modules": permissions.allowed_modules,
-        "message": "Permissões atualizadas com sucesso"
+        "message": "Permissões atualizadas com sucesso",
+        "user_id": str(user_id),
+        "permissions_count": len(permissions_data.permission_ids)
     }
 
-@router.get("/my-modules")
-def get_my_modules(current_user: User = Depends(get_current_user)):
-    """Obter módulos permitidos para o usuário logado"""
+
+@router.delete("/user/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_all_permissions(user_id: UUID, db: Session = Depends(get_db)):
+    """Remove todas as permissões de um usuário"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
     
-    # Super admin tem acesso especial (apenas gestão)
-    if current_user.role == 'super_admin':
-        return {
-            "role": "super_admin",
-            "modules": ["organizacoes", "usuarios"]  # Apenas gestão do sistema
-        }
-    
-    # Admin tem acesso total
-    if current_user.role == 'admin':
-        return {
-            "role": "admin",
-            "modules": AVAILABLE_MODULES
-        }
-    
-    # User comum tem acesso conforme configurado
-    try:
-        allowed_modules = json.loads(current_user.allowed_modules) if current_user.allowed_modules else []
-    except:
-        allowed_modules = ["dashboard", "pacientes", "agenda"]
-    
-    return {
-        "role": "user",
-        "modules": allowed_modules
-    }
+    db.query(UserPermission).filter(UserPermission.user_id == user_id).delete()
+    db.commit()
