@@ -41,17 +41,17 @@ class UserResponse(BaseModel):
 @router.get("/", response_model=List[UserResponse])
 def list_users(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    organization_id: Optional[UUID] = None
 ):
-    if current_user.role == 'super_admin':
-        users = db.query(User).filter(User.is_active == True).all()
-    elif current_user.role == 'admin':
-        users = db.query(User).filter(
-            User.organization_id == current_user.organization_id,
-            User.is_active == True
-        ).all()
-    else:
-        raise HTTPException(status_code=403, detail="Sem permissão")
+    """
+    🔓 SEM AUTENTICAÇÃO - Lista usuários ativos
+    """
+    query = db.query(User).filter(User.is_active == True)
+    
+    if organization_id:
+        query = query.filter(User.organization_id == organization_id)
+    
+    users = query.all()
     
     result = []
     for user in users:
@@ -81,6 +81,7 @@ def create_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    """Criar novo usuário (super_admin ou admin da própria org)"""
     if current_user.role not in ['super_admin', 'admin']:
         raise HTTPException(status_code=403, detail="Sem permissão")
     

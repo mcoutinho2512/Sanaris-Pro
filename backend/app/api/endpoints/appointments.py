@@ -19,7 +19,7 @@ from app.schemas.appointment import (
 from app.services.notifications import notification_service
 from app.services.notifications import notification_service
 
-router = APIRouter(prefix="/api/v1/appointments", tags=["Agendamentos"])
+router = APIRouter(tags=["Agendamentos"])
 
 
 # ============================================

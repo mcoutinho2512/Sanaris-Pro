@@ -18,7 +18,7 @@ from app.schemas.medical_record import (
     RecordType
 )
 
-router = APIRouter(prefix="/api/v1/medical-records", tags=["Prontuários"])
+router = APIRouter(tags=["Prontuários"])
 
 
 # ============================================

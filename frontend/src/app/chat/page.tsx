@@ -118,7 +118,7 @@ export default function ChatPage() {
   const loadUsers = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch('http://localhost:8888/api/v1/users/', {
+      const response = await fetch('http://localhost:8888/api/v1/users-management/', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {

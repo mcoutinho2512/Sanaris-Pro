@@ -8,7 +8,7 @@ class TokenData(BaseModel):
     user_id: Optional[UUID] = None
 
 class UserBase(BaseModel):
-    email: EmailStr
+    email: str
     full_name: str
 
 class UserCreate(UserBase):
@@ -42,7 +42,7 @@ class Token(BaseModel):
     user: Optional[UserResponse] = None
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 class GoogleLoginRequest(BaseModel):

@@ -20,7 +20,7 @@ from app.schemas.prescription import (
     PrescriptionType
 )
 
-router = APIRouter(prefix="/api/v1/prescriptions", tags=["Prescrições"])
+router = APIRouter(tags=["Prescrições"])
 
 
 # ============================================

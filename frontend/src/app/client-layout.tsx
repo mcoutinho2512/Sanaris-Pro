@@ -5,7 +5,9 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Building2, Users, LayoutDashboard, LogOut, 
-  Menu, X, Settings, Lock, ChevronDown
+  Menu, X, Settings, Lock, ChevronDown,
+  UserCircle, Calendar, FileText, Pill, 
+  Shield, DollarSign, FileBarChart, BarChart3, MessageSquare
 } from 'lucide-react';
 
 interface Module {
@@ -53,7 +55,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
         if (modulesResponse.ok) {
           const modulesData = await modulesResponse.json();
-          setAllowedModules(modulesData.allowed_modules || []);
+          setAllowedModules(modulesData.modules || []);
         }
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
@@ -81,7 +83,17 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   ];
 
   const allModules: Module[] = [
-    { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+    { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard, path: '/' },
+    { id: 'pacientes', name: 'Pacientes', icon: UserCircle, path: '/pacientes' },
+    { id: 'agenda', name: 'Agenda', icon: Calendar, path: '/agenda' },
+    { id: 'prontuarios', name: 'Prontuários', icon: FileText, path: '/prontuarios' },
+    { id: 'prescricoes', name: 'Prescrições', icon: Pill, path: '/prescricoes' },
+    { id: 'cfm', name: 'CFM', icon: Shield, path: '/cfm' },
+    { id: 'financeiro', name: 'Financeiro', icon: DollarSign, path: '/financeiro' },
+    { id: 'faturamento_tiss', name: 'Faturamento TISS', icon: FileBarChart, path: '/faturamento-tiss' },
+    { id: 'relatorios', name: 'Relatórios', icon: BarChart3, path: '/relatorios' },
+    { id: 'configuracoes', name: 'Configurações', icon: Settings, path: '/configuracoes' },
+    { id: 'chat', name: 'Chat', icon: MessageSquare, path: '/chat' },
     ...superAdminModules
   ];
 

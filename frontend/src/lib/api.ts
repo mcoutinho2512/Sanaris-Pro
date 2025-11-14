@@ -10,9 +10,9 @@ export const api = axios.create({
 // Interceptor para adicionar token se necessário
 api.interceptors.request.use((config) => {
   // Adicionar token aqui quando implementar autenticação
-  // const token = localStorage.getItem('token');
-  // if (token) {
+  const token = localStorage.getItem('access_token');
+  if (token) {
   //   config.headers.Authorization = `Bearer ${token}`;
-  // }
+  }
   return config;
 });
