@@ -42,6 +42,7 @@ interface Statistics {
 export default function PacientesPage() {
   const router = useRouter();
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [showNewModal, setShowNewModal] = useState(false);
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [statistics, setStatistics] = useState<Statistics[]>([]);

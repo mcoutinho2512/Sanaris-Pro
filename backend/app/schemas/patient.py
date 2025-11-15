@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, UUID4
 from datetime import date, datetime
 from typing import Optional
 
@@ -10,7 +10,7 @@ class PatientBase(BaseModel):
     email: Optional[str] = None
 
 class PatientCreate(PatientBase):
-    tenant_id: str
+    tenant_id: UUID4
 
 class PatientUpdate(BaseModel):
     """Schema para atualização de paciente - todos os campos opcionais"""
@@ -22,8 +22,8 @@ class PatientUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 class PatientResponse(PatientBase):
-    id: str
-    tenant_id: str
+    id: UUID4
+    tenant_id: UUID4
     is_active: bool
     created_at: datetime
     

@@ -57,21 +57,9 @@ export default function AgendaPage() {
       alert('Preencha paciente e data/hora!');
       return;
     }
-    
+
     try {
-      // Pegar ID do profissional logado
-      const meRes = await fetch('http://localhost:8888/api/v1/auth/me', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      const userData = await meRes.json();
-      
-      // Adicionar healthcare_professional_id
-      const appointmentData = {
-        ...newAppointment,
-        healthcare_professional_id: userData.id
-      };
-      
-      await appointmentsService.create(appointmentData);
+      await appointmentsService.create(newAppointment);
       alert('Agendamento criado com sucesso!');
       setShowNewModal(false);
       setNewAppointment({ patient_id: '', scheduled_date: '', duration_minutes: 30, reason: '' });
@@ -80,7 +68,7 @@ export default function AgendaPage() {
       console.error('Erro ao criar agendamento:', error);
       alert(error.response?.data?.detail || 'Erro ao criar agendamento');
     }
-  }
+  };
 
   const handleConfirm = async (id: string) => {
     if (!confirm('Confirmar este agendamento?')) return;

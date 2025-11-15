@@ -1,7 +1,7 @@
 """
 Schemas para Prontuário Eletrônico - COMPLETO
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, UUID4, Field
 from typing import Optional, List
 from datetime import datetime, date
 from decimal import Decimal
@@ -64,7 +64,7 @@ class VitalSignsUpdate(VitalSignsBase):
 
 class VitalSignsResponse(VitalSignsBase):
     """Schema de resposta de sinais vitais"""
-    id: str
+    id: UUID4
     medical_record_id: str
     measured_at: datetime
     created_at: datetime
@@ -95,7 +95,7 @@ class AttachmentCreate(AttachmentBase):
 
 class AttachmentResponse(AttachmentBase):
     """Schema de resposta de anexo"""
-    id: str
+    id: UUID4
     medical_record_id: str
     file_path: Optional[str] = None
     file_url: Optional[str] = None
@@ -113,9 +113,9 @@ class AttachmentResponse(AttachmentBase):
 
 class MedicalRecordBase(BaseModel):
     """Schema base de prontuário"""
-    patient_id: str
-    appointment_id: Optional[str] = None
-    healthcare_professional_id: str
+    patient_id: UUID4
+    appointment_id: Optional[UUID4] = None
+    healthcare_professional_id: UUID4
     record_type: RecordType = RecordType.CONSULTATION
     
     # Triagem
@@ -216,7 +216,7 @@ class MedicalRecordUpdate(BaseModel):
 
 class MedicalRecordResponse(MedicalRecordBase):
     """Schema de resposta de prontuário"""
-    id: str
+    id: UUID4
     record_date: datetime
     is_completed: bool
     completed_at: Optional[datetime] = None
@@ -234,9 +234,9 @@ class MedicalRecordResponse(MedicalRecordBase):
 
 class MedicalRecordListResponse(BaseModel):
     """Schema simplificado para listagem"""
-    id: str
-    patient_id: str
-    healthcare_professional_id: str
+    id: UUID4
+    patient_id: UUID4
+    healthcare_professional_id: UUID4
     record_date: datetime
     record_type: RecordType
     chief_complaint: Optional[str] = None
