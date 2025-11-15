@@ -43,12 +43,8 @@ def create_prescription(
         )
     
     # Define data da prescrição se não informada
-    if not prescription_data.prescription_date:
-        prescription_data.prescription_date = datetime.utcnow()
     
     # Define validade padrão (30 dias) se não informada
-    if not prescription_data.valid_until:
-        prescription_data.valid_until = datetime.utcnow() + timedelta(days=30)
     
     # Cria prescrição (sem os items)
     prescription_dict = prescription_data.dict(exclude={'items'})
