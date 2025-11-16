@@ -102,7 +102,7 @@ export default function ChatPage() {
 
   const loadCurrentUser = async () => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:8888/api/v1/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -117,7 +117,7 @@ export default function ChatPage() {
 
   const loadUsers = async () => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:8888/api/v1/users-management/', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -132,7 +132,7 @@ export default function ChatPage() {
 
   const loadChannels = async () => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:8888/api/chat/channels', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -153,7 +153,7 @@ export default function ChatPage() {
 
   const loadMessages = async (channelId: string) => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:8888/api/chat/channels/${channelId}/messages`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -169,7 +169,7 @@ export default function ChatPage() {
 
   const loadParticipants = async (channelId: string) => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:8888/api/chat/channels/${channelId}/participants`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -215,7 +215,7 @@ export default function ChatPage() {
     formData.append('file', file);
 
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:8888/api/files/upload', {
         method: 'POST',
         headers: {
@@ -239,7 +239,7 @@ export default function ChatPage() {
     setIsUploading(true);
 
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       let fileData = null;
 
       // Upload do arquivo se houver
@@ -284,13 +284,31 @@ export default function ChatPage() {
   };
 
   const createChannel = async () => {
-    if (!newChannelName.trim()) {
-      alert('Digite um nome para o canal!');
+    // Validação: precisa ter pelo menos 1 usuário
+    if (selectedUsers.length === 0) {
+      alert('Selecione pelo menos um usuário!');
+      return;
+    }
+
+    // Se for grupo (2+ usuários), nome é obrigatório
+    if (selectedUsers.length > 1 && !newChannelName.trim()) {
+      alert('Digite um nome para o grupo!');
       return;
     }
 
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
+      
+      // Se for chat direto (1 usuário), usar nome do usuário
+      let channelName = newChannelName.trim();
+      let channelType = newChannelType;
+      
+      if (selectedUsers.length === 1) {
+        const selectedUser = availableUsers.find(u => u.id === selectedUsers[0]);
+        channelName = selectedUser?.full_name || 'Chat Direto';
+        channelType = 'direct';
+      }
+      
       const response = await fetch('http://localhost:8888/api/chat/channels', {
         method: 'POST',
         headers: {
@@ -298,31 +316,39 @@ export default function ChatPage() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          name: newChannelName,
-          description: `Canal ${newChannelName}`,
-          channel_type: newChannelType,
-          sector: newChannelType === 'group' ? 'Geral' : undefined,
+          name: channelName,
+          description: selectedUsers.length === 1 ? `Chat com ${channelName}` : `Grupo ${channelName}`,
+          channel_type: channelType,
+          sector: channelType === 'group' ? 'Geral' : undefined,
           participant_ids: selectedUsers
         })
       });
-
+      
       if (response.ok) {
+        const newChannel = await response.json();
         setShowNewChannelModal(false);
         setNewChannelName('');
         setSelectedUsers([]);
-        loadChannels();
+        await loadChannels();
+        setSelectedChannel(newChannel);
+        alert(selectedUsers.length === 1 ? 'Chat iniciado!' : 'Grupo criado com sucesso!');
+      } else {
+        const error = await response.json();
+        alert(error.detail || 'Erro ao criar canal');
       }
     } catch (error) {
       console.error('Erro ao criar canal:', error);
+      alert('Erro ao criar canal. Verifique sua conexão.');
     }
   };
+
 
   const deleteChannel = async () => {
     if (!selectedChannel) return;
     if (!confirm('Deseja realmente excluir este canal?')) return;
 
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:8888/api/chat/channels/${selectedChannel.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -343,7 +369,7 @@ export default function ChatPage() {
     if (!selectedChannel) return;
 
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:8888/api/chat/channels/${selectedChannel.id}/participants`, {
         method: 'POST',
         headers: {
@@ -367,7 +393,7 @@ export default function ChatPage() {
     if (!confirm('Remover este participante?')) return;
 
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:8888/api/chat/channels/${selectedChannel.id}/participants/${userId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
