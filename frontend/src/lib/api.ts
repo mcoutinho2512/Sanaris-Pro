@@ -7,12 +7,41 @@ export const api = axios.create({
   },
 });
 
-// Interceptor para adicionar token se necessário
-api.interceptors.request.use((config) => {
-  // Adicionar token aqui quando implementar autenticação
-  const token = localStorage.getItem('access_token');
-  if (token) {
-  //   config.headers.Authorization = `Bearer ${token}`;
+// Interceptor para adicionar token automaticamente
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
+
+// Interceptor para detectar token expirado (401) e fazer logout automático
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    // Se receber 401 (Unauthorized), significa que o token expirou
+    if (error.response?.status === 401) {
+      // Verificar se não está na página de login para evitar loop
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        // Limpar dados locais
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        
+        // Mostrar mensagem
+        alert('Sessão expirada! Faça login novamente.');
+        
+        // Redirecionar para login
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);

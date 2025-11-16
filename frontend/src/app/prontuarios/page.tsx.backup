@@ -90,44 +90,28 @@ export default function ProntuariosPage() {
       alert('Preencha paciente e queixa principal!');
       return;
     }
-    
+
     try {
-      // Pegar ID do profissional logado
-      const meRes = await fetch('http://localhost:8888/api/v1/auth/me', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      const userData = await meRes.json();
-      
-      // Adicionar healthcare_professional_id
-      const recordData = {
-        ...newRecord,
-        healthcare_professional_id: userData.id
-      };
-      
       const response = await fetch('http://localhost:8888/api/v1/medical-records/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(recordData)
+        body: JSON.stringify(newRecord)
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Erro ao criar prontuário');
-      }
-      
+
+      if (!response.ok) throw new Error('Erro ao criar prontuário');
+
       alert('Prontuário criado com sucesso!');
       setShowNewModal(false);
       setNewRecord({ patient_id: '', chief_complaint: '', diagnosis: '' });
       loadData();
     } catch (error: any) {
       console.error('Erro ao criar prontuário:', error);
-      alert(error.message || 'Erro ao criar prontuário');
+      alert('Erro ao criar prontuário');
     }
   };
-
 
   const handleUpdateRecord = async () => {
     if (!editRecord.chief_complaint) {
