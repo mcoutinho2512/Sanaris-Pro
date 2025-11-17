@@ -96,13 +96,22 @@ export default function UsersManagementPage() {
 
     try {
       const token = localStorage.getItem('token');
+      
+      // Remover campos vazios ou inválidos
+      const dataToSend: any = {};
+      if (formData.full_name) dataToSend.full_name = formData.full_name;
+      if (formData.email) dataToSend.email = formData.email;
+      if (formData.recovery_email) dataToSend.recovery_email = formData.recovery_email;
+      if (formData.role) dataToSend.role = formData.role;
+      dataToSend.is_active = formData.is_active;
+      
       const response = await fetch(`http://localhost:8888/api/v1/users-management/users/${editingUser.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(dataToSend)
       });
 
       if (response.ok) {
