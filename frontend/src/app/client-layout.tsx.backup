@@ -78,10 +78,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   }
 
   const superAdminModules: Module[] = [
-    { id: 'organizations', name: 'Organizações', icon: Building2, path: '/organizacoes' }
-  ];
-
-  const adminModules: Module[] = [
+    { id: 'organizations', name: 'Organizações', icon: Building2, path: '/organizacoes' },
     { id: 'users', name: 'Usuários', icon: Users, path: '/usuarios' }
   ];
 
@@ -96,18 +93,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     { id: 'faturamento_tiss', name: 'Faturamento TISS', icon: FileBarChart, path: '/faturamento-tiss' },
     { id: 'relatorios', name: 'Relatórios', icon: BarChart3, path: '/relatorios' },
     { id: 'configuracoes', name: 'Configurações', icon: Settings, path: '/configuracoes' },
-    { id: 'chat', name: 'Chat', icon: MessageSquare, path: '/chat' }
+    { id: 'chat', name: 'Chat', icon: MessageSquare, path: '/chat' },
+    ...superAdminModules
   ];
 
   const visibleModules = userRole === 'super_admin' 
-    ? superAdminModules  // Super admin vê APENAS gestão do sistema
-    : userRole === 'admin'
-    ? [...allModules, ...adminModules]  // Admin vê tudo da clínica + gestão de usuários
-    : allModules.filter(m => 
-        m.id !== 'financeiro' &&  // Usuário básico NUNCA vê financeiro
-        m.id !== 'faturamento_tiss' &&
-        allowedModules.includes(m.id)  // Apenas módulos permitidos
-      );
+    ? allModules  // Super admin vê tudo
+    : allModules.filter(m => !superAdminModules.find(sm => sm.id === m.id));  // Outros veem tudo exceto módulos de super admin
 
   return (
     <div className="flex h-screen bg-gray-50">

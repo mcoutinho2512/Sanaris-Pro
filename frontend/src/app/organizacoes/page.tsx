@@ -34,7 +34,7 @@ export default function OrganizationsPage() {
 
   const loadCurrentUser = async () => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       if (!token) {
         router.push('/login');
         return;
@@ -64,7 +64,7 @@ export default function OrganizationsPage() {
 
   const loadOrganizations = async () => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:8888/api/v1/organizations/', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -84,7 +84,7 @@ export default function OrganizationsPage() {
     e.preventDefault();
 
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const url = editingOrg
         ? `http://localhost:8888/api/v1/organizations/${editingOrg.id}`
         : 'http://localhost:8888/api/v1/organizations/';

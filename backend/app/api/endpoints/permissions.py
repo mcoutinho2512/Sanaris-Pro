@@ -62,18 +62,25 @@ def get_my_modules(
     # Super admin e admin têm acesso a todos
     if current_user.role in ['super_admin', 'admin']:
         return [
-            'patients', 'appointments', 'medical_records', 'prescriptions',
-            'chat', 'financial', 'reports', 'tiss', 'cfm', 'admin'
+            "dashboard", "pacientes", "agenda", "prontuarios", 
+            "prescricoes", "cfm", "relatorios", "chat"
         ]
     
-    # Usuários básicos: buscar módulos baseado em permissões
-    modules = db.query(Permission.module).distinct().join(
-        UserPermission, UserPermission.permission_id == Permission.id
-    ).filter(
-        UserPermission.user_id == current_user.id
-    ).all()
+    # Usuários básicos: retornar allowed_modules
+    if current_user.allowed_modules:
+        modules = current_user.allowed_modules
+        
+        # Se for string (formato PostgreSQL ARRAY {a,b,c}), converter para lista
+        if isinstance(modules, str):
+            # Remover { } e dividir por vírgula
+            modules = modules.strip('{}').split(',')
+            # Limpar espaços
+            modules = [m.strip() for m in modules if m.strip()]
+        
+        return modules
     
-    return [m[0] for m in modules if m[0]]
+    # Se não tiver módulos definidos, retornar vazio
+    return []
 
 
 @router.get("/user/{user_id}", response_model=UserPermissionsDetail)

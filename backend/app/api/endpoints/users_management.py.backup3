@@ -36,31 +36,20 @@ class UserResponse(BaseModel):
     role: str
     is_active: bool
     organization_name: Optional[str] = None
-    allowed_modules: Optional[List[str]] = []
     created_at: str
 
-@router.get("/users", response_model=List[UserResponse])
+@router.get("/", response_model=List[UserResponse])
 def list_users(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    organization_id: Optional[UUID] = None
 ):
     """
-    Lista usuários com base no role:
-    - Super Admin: vê TODOS os usuários
-    - Admin: vê apenas usuários da SUA organização
+    🔓 SEM AUTENTICAÇÃO - Lista usuários ativos
     """
     query = db.query(User).filter(User.is_active == True)
     
-    if current_user.role == 'super_admin':
-        # Super admin vê todos
-        pass
-    elif current_user.role == 'admin':
-        # Admin vê apenas da sua organização
-        query = query.filter(User.organization_id == current_user.organization_id)
-        # Admin NÃO vê super_admin
-        query = query.filter(User.role != 'super_admin')
-    else:
-        raise HTTPException(status_code=403, detail="Sem permissão")
+    if organization_id:
+        query = query.filter(User.organization_id == organization_id)
     
     users = query.all()
     
@@ -74,13 +63,6 @@ def list_users(
         
         created_at_str = user.created_at if isinstance(user.created_at, str) else user.created_at.isoformat()
         
-        # Converter allowed_modules de PostgreSQL ARRAY para lista Python
-        modules = user.allowed_modules if user.allowed_modules else []
-        if isinstance(modules, str):
-            # Formato PostgreSQL: {a,b,c} -> ['a','b','c']
-            modules = modules.strip('{}').split(',')
-            modules = [m.strip() for m in modules if m.strip()]
-        
         result.append(UserResponse(
             id=user.id,
             email=user.email,
@@ -89,12 +71,11 @@ def list_users(
             role=user.role,
             is_active=user.is_active,
             organization_name=org_name,
-            allowed_modules=modules,
             created_at=created_at_str
         ))
     return result
 
-@router.post("/users", response_model=UserResponse)
+@router.post("/", response_model=UserResponse)
 def create_user(
     user_data: UserCreate,
     db: Session = Depends(get_db),
@@ -167,7 +148,7 @@ def create_user(
         created_at=new_user.created_at if isinstance(new_user.created_at, str) else new_user.created_at.isoformat()
     )
 
-@router.put("/users/{user_id}", response_model=UserResponse)
+@router.put("/{user_id}", response_model=UserResponse)
 def update_user(
     user_id: UUID,
     user_data: UserUpdate,
@@ -222,7 +203,7 @@ def update_user(
         created_at=created_at_str
     )
 
-@router.delete("/users/{user_id}")
+@router.delete("/{user_id}")
 def delete_user(
     user_id: UUID,
     db: Session = Depends(get_db),
