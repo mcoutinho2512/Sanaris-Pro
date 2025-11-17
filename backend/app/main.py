@@ -4,6 +4,7 @@ from app.core.config import settings
 from app.core.database import engine, Base
 
 from app.api.endpoints import (
+    users_simple,
     auth,
     file_upload,
     file_download, 
@@ -35,6 +36,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(organizations.router, prefix="/api/v1/organizations", tags=["Organizations"])
 app.include_router(users_management.router, prefix="/api/v1/users-management", tags=["Users Management"])
+app.include_router(users_simple.router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(patients.router, prefix="/api/v1/patients", tags=["Patients"])
 app.include_router(appointments.router, prefix="/api/v1/appointments", tags=["Appointments"])
 app.include_router(medical_records.router, prefix="/api/v1/medical-records", tags=["Medical Records"])

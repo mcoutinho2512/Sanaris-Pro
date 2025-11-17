@@ -96,7 +96,7 @@ export default function UsersManagementPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8888/api/v1/users-management/users/${editingUser.id}`, {
+      const response = await fetch(`http://localhost:8888/api/v1/users-management/${editingUser.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -124,7 +124,7 @@ export default function UsersManagementPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8888/api/v1/users-management/users/${userId}`, {
+      const response = await fetch(`http://localhost:8888/api/v1/users-management/${userId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

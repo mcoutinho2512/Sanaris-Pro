@@ -28,7 +28,9 @@ def list_users(
     """Listar usuários da mesma organização"""
     
     users = db.query(User).filter(
-        User.organization_id == current_user.organization_id
+        User.organization_id == current_user.organization_id,
+        User.is_active == True,
+        ~User.email.contains('_deleted_')  # Excluir usuários deletados
     ).offset(skip).limit(limit).all()
     
     return users

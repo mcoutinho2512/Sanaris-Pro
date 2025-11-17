@@ -118,7 +118,13 @@ export default function ChatPage() {
   const loadUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/v1/users-management/', {
+      
+      // Usar endpoint correto baseado no role
+      const endpoint = currentUser?.role === 'admin' || currentUser?.role === 'super_admin'
+        ? 'http://localhost:8888/api/v1/users-management/users'
+        : 'http://localhost:8888/api/v1/users/';
+      
+      const response = await fetch(endpoint, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
