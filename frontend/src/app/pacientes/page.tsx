@@ -85,7 +85,7 @@ export default function PacientesPage() {
 
   const loadCurrentUser = async () => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:8888/api/v1/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -101,7 +101,7 @@ export default function PacientesPage() {
 
   const loadPatients = async () => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:8888/api/v1/patients/', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -120,7 +120,7 @@ export default function PacientesPage() {
 
   const loadOrganizations = async () => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:8888/api/v1/organizations/', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -136,7 +136,7 @@ export default function PacientesPage() {
 
   const loadStatistics = async () => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:8888/api/v1/patients/statistics', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -181,7 +181,7 @@ export default function PacientesPage() {
     e.preventDefault();
     
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       
       const response = await fetch('http://localhost:8888/api/v1/patients/', {
         method: 'POST',

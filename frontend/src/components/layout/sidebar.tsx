@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Home, Calendar, FileText, MessageSquare, DollarSign, Users as UsersIcon, Settings, LogOut, Building2, Menu, X, Users, Shield } from 'lucide-react';
+import { Home, Calendar, FileText, MessageSquare, DollarSign, Users as UsersIcon, Settings, LogOut, Building2, Menu, X, Users, Shield, Stethoscope } from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -13,9 +13,12 @@ export default function Sidebar() {
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
+    console.log('🔍 SIDEBAR: userStr =', userStr);
     if (userStr && userStr !== 'undefined') {
       try {
         const userData = JSON.parse(userStr);
+        console.log('🔍 SIDEBAR: userData =', userData);
+        console.log('�� SIDEBAR: role =', userData.role);
         setUser(userData);
       } catch (error) {
         console.error('Erro ao parsear user:', error);
@@ -31,6 +34,10 @@ export default function Sidebar() {
 
   const isAdmin = user?.role === 'super_admin' || user?.role === 'admin';
   const isSuperAdmin = user?.role === 'super_admin';
+  
+  console.log('🔍 SIDEBAR: user =', user);
+  console.log('🔍 SIDEBAR: isAdmin =', isAdmin);
+  console.log('🔍 SIDEBAR: isSuperAdmin =', isSuperAdmin);
 
   if (!user) return null;
 
@@ -181,6 +188,17 @@ export default function Sidebar() {
           >
             <MessageSquare className="w-5 h-5" />
             <span>Chat</span>
+          </Link>
+
+          <Link
+            href="/meu-perfil"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              pathname === '/meu-perfil' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'
+            }`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <Stethoscope className="w-5 h-5" />
+            <span>Meu Perfil</span>
           </Link>
 
           {isAdmin && (

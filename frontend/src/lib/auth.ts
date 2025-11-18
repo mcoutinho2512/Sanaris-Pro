@@ -30,7 +30,7 @@ export const authService = {
     const data = await response.json();
     
     // Salvar token e usuário
-    localStorage.setItem('access_token', data.access_token);
+    localStorage.setItem('token', data.access_token);
     localStorage.setItem('user', JSON.stringify(data.user));
     localStorage.setItem('isAuthenticated', 'true');
     
@@ -44,7 +44,7 @@ export const authService = {
   },
 
   getToken(): string | null {
-    return localStorage.getItem('access_token');
+    return localStorage.getItem('token');
   },
 
   getUser(): User | null {

@@ -17,6 +17,7 @@ from app.api.endpoints import (
     patients, 
     permissions, 
     admin_stats,
+    dashboard_stats,
     appointments,
     medical_records,
     prescriptions
@@ -48,6 +49,7 @@ app.include_router(appointments.router, prefix="/api/v1/appointments", tags=["Ap
 app.include_router(medical_records.router, prefix="/api/v1/medical-records", tags=["Medical Records"])
 app.include_router(prescriptions.router, prefix="/api/v1/prescriptions", tags=["Prescriptions"])
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
+app.include_router(dashboard_stats.router, prefix="/api/v1/statistics", tags=["Dashboard Statistics"])
 app.include_router(file_upload.router, prefix="/api/files", tags=["Files"])
 app.include_router(file_download.router, prefix="/api/files", tags=["Files"])
 app.include_router(permissions.router, prefix="/api/v1/permissions", tags=["Permissions"])

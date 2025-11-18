@@ -32,32 +32,8 @@ export default function LoginPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('🔑 Login OK, salvando token...');
-        console.log('📋 Token recebido:', data.access_token.substring(0, 50) + '...');
         localStorage.setItem('token', data.access_token);
-        console.log('✅ Token salvo no localStorage');
-        
-        // Buscar dados do usuário
-        console.log('👤 Buscando dados do usuário...');
-        const userResponse = await fetch('http://localhost:8888/api/v1/auth/me', {
-          headers: {
-            'Authorization': `Bearer ${data.access_token}`
-          }
-        });
-        
-        if (userResponse.ok) {
-          const userData = await userResponse.json();
-          console.log('✅ Dados do usuário recebidos:', userData);
-          localStorage.setItem('user', JSON.stringify(userData));
-        } else {
-          console.error('❌ Erro ao buscar dados do usuário:', userResponse.status);
-        }
-        
-        console.log('🔄 Redirecionando para /...');
-        // Forçar reload completo para sidebar reagir
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 100);
+        router.push('/');
       } else {
         const data = await response.json();
         setError(data.detail || 'Erro ao fazer login');

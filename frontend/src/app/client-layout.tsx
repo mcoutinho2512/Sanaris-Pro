@@ -32,13 +32,23 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const isPublicPage = publicPages.some(page => pathname?.startsWith(page));
 
   useEffect(() => {
+    console.log('🔍 CLIENT-LAYOUT: useEffect executado, pathname:', pathname);
     const fetchUserData = async () => {
       try {
         const token = localStorage.getItem('token');
+        console.log('🔑 CLIENT-LAYOUT: Token encontrado?', !!token);
+        if (token) {
+          console.log('📋 CLIENT-LAYOUT: Token lido:', token.substring(0, 50) + '...');
+        }
+        if (token) {
+          console.log('📋 CLIENT-LAYOUT: Token lido:', token.substring(0, 50) + '...');
+        }
         if (!token) {
+          console.log('❌ CLIENT-LAYOUT: Sem token, redirecionando para /login');
           router.push('/login');
           return;
         }
+        console.log('✅ CLIENT-LAYOUT: Token OK, buscando dados do usuário...');
 
         const meResponse = await fetch('http://localhost:8888/api/v1/auth/me', {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -46,8 +56,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
         if (meResponse.ok) {
           const userData = await meResponse.json();
+          console.log('👤 CLIENT-LAYOUT: Dados do usuário:', userData);
           setUserRole(userData.role);
           setUserName(userData.full_name);
+        } else {
+          console.error('❌ CLIENT-LAYOUT: Erro no /auth/me:', meResponse.status);
         }
 
         const modulesResponse = await fetch('http://localhost:8888/api/v1/permissions/my-modules', {
