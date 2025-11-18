@@ -1,9 +1,11 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import engine, Base
 
 from app.api.endpoints import (
+    doctor_profile,
     medications,
     users_simple,
     auth,
@@ -26,6 +28,9 @@ app = FastAPI(
     version="1.0.0"
 )
 
+
+# Servir arquivos estáticos de uploads
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -48,6 +53,7 @@ app.include_router(file_download.router, prefix="/api/files", tags=["Files"])
 app.include_router(permissions.router, prefix="/api/v1/permissions", tags=["Permissions"])
 app.include_router(admin_stats.router, prefix="/api/v1/admin", tags=["Admin Statistics"])
 app.include_router(medications.router, prefix="/api/v1/medications", tags=["Medications"])
+app.include_router(doctor_profile.router, prefix="/api/v1/doctor-profile", tags=["Doctor Profile"])
 
 @app.get("/")
 def read_root():

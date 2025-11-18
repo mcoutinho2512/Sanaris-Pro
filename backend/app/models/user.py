@@ -40,3 +40,4 @@ class User(Base):
     
     # Relacionamentos
     organization = relationship("Organization", back_populates="users")
+    doctor_profile = relationship("DoctorProfile", back_populates="user", uselist=False)
