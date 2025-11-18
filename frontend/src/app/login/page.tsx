@@ -33,7 +33,21 @@ export default function LoginPage() {
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem('token', data.access_token);
-        router.push('/');
+        
+        // Buscar dados do usuário
+        const userResponse = await fetch('http://localhost:8888/api/v1/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${data.access_token}`
+          }
+        });
+        
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          localStorage.setItem('user', JSON.stringify(userData));
+        }
+        
+        // Forçar reload completo para sidebar reagir
+        window.location.href = '/';
       } else {
         const data = await response.json();
         setError(data.detail || 'Erro ao fazer login');
