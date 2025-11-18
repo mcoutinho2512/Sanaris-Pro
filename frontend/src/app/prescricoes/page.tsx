@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Pill, Plus, Eye, Edit, Trash2, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import MedicationAutocomplete from '@/components/MedicationAutocomplete';
 
 interface Prescription {
   id: string;
@@ -322,12 +323,13 @@ export default function PrescricoesPage() {
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Nome do Medicamento *</label>
-                    <input 
-                      type="text"
+                    <MedicationAutocomplete
                       value={newPrescription.medication_name}
-                      onChange={(e) => setNewPrescription({...newPrescription, medication_name: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" 
-                      placeholder="Ex: Dipirona 500mg"
+                      onChange={(value, medication) => {
+                        setNewPrescription({...newPrescription, medication_name: value});
+                      }}
+                      placeholder="Digite o nome do medicamento... (mín. 2 caracteres)"
+                      className="px-4 py-2"
                     />
                   </div>
 

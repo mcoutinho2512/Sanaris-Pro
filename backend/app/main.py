@@ -4,6 +4,7 @@ from app.core.config import settings
 from app.core.database import engine, Base
 
 from app.api.endpoints import (
+    medications,
     users_simple,
     auth,
     file_upload,
@@ -46,6 +47,7 @@ app.include_router(file_upload.router, prefix="/api/files", tags=["Files"])
 app.include_router(file_download.router, prefix="/api/files", tags=["Files"])
 app.include_router(permissions.router, prefix="/api/v1/permissions", tags=["Permissions"])
 app.include_router(admin_stats.router, prefix="/api/v1/admin", tags=["Admin Statistics"])
+app.include_router(medications.router, prefix="/api/v1/medications", tags=["Medications"])
 
 @app.get("/")
 def read_root():
