@@ -6,6 +6,7 @@ from uuid import UUID
 from app.core.database import get_db
 from app.models.user import User
 from app.models.organization import Organization
+from app.models.job_title import JobTitle
 from app.core.security import get_current_user, get_password_hash
 from app.services.email_service import EmailService
 from pydantic import BaseModel, EmailStr, Field
@@ -19,6 +20,7 @@ class UserCreate(BaseModel):
     password: str
     organization_id: Optional[UUID] = None
     role: str = "user"
+    job_title_id: Optional[UUID] = None
 
 class UserUpdate(BaseModel):
     email: Optional[str] = None
@@ -27,6 +29,7 @@ class UserUpdate(BaseModel):
     role: Optional[str] = None
     is_active: Optional[bool] = None
     organization_id: Optional[UUID] = None
+    job_title_id: Optional[UUID] = None
 
 class UserResponse(BaseModel):
     id: UUID
@@ -36,6 +39,8 @@ class UserResponse(BaseModel):
     role: str
     is_active: bool
     organization_name: Optional[str] = None
+    job_title_id: Optional[UUID] = None
+    job_title_name: Optional[str] = None
     allowed_modules: Optional[List[str]] = []
     created_at: str
 

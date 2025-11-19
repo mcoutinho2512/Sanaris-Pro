@@ -28,6 +28,7 @@ class User(Base):
     
     # Role: super_admin, admin, user
     role = Column(String(20), default='user')
+    job_title_id = Column(UUID(as_uuid=True), nullable=True)  # FK para job_titles
     
     # Permissões granulares (apenas para role='user')
     # Lista de módulos permitidos em formato JSON

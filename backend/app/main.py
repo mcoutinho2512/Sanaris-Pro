@@ -5,6 +5,7 @@ from app.core.config import settings
 from app.core.database import engine, Base
 
 from app.api.endpoints import (
+    job_titles,
     doctor_profile,
     medications,
     users_simple,
@@ -50,6 +51,7 @@ app.include_router(medical_records.router, prefix="/api/v1/medical-records", tag
 app.include_router(prescriptions.router, prefix="/api/v1/prescriptions", tags=["Prescriptions"])
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
 app.include_router(dashboard_stats.router, prefix="/api/v1/statistics", tags=["Dashboard Statistics"])
+app.include_router(job_titles.router, prefix="/api/v1/job-titles", tags=["Job Titles"])
 app.include_router(file_upload.router, prefix="/api/files", tags=["Files"])
 app.include_router(file_download.router, prefix="/api/files", tags=["Files"])
 app.include_router(permissions.router, prefix="/api/v1/permissions", tags=["Permissions"])
