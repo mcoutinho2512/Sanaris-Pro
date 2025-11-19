@@ -18,6 +18,7 @@
 - [x] Chat em tempo real (WebSocket)
 - [x] Assinatura digital
 - [x] Portal CFM
+- [x] Sistema de Cargos/Funções (23 cargos, 6 departamentos)
 
 ---
 
@@ -237,7 +238,8 @@ PUT  /api/v1/appointments/{id}/reschedule
 
 ### 7. 👔 Sistema de Cargos/Funções
 **Prioridade:** ALTA
-**Status:** Pendente
+**Status:** ✅ CONCLUÍDO (19/11/2025)
+**Commit:** ad58668
 
 **Descrição:** 
 Adicionar campo "cargo" no cadastro de usuários, complementando o "role" existente.
