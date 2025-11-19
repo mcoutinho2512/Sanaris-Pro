@@ -74,6 +74,14 @@ def list_users(
         org_name = None
         if user.organization_id:
             org = db.query(Organization).filter(Organization.id == user.organization_id).first()
+        
+        # Buscar cargo do usuário
+        job_title = None
+        job_title_name = None
+        if user.job_title_id:
+            job_title = db.query(JobTitle).filter(JobTitle.id == user.job_title_id).first()
+            if job_title:
+                job_title_name = job_title.name
             if org:
                 org_name = org.name
         
@@ -94,6 +102,8 @@ def list_users(
             role=user.role,
             is_active=user.is_active,
             organization_name=org_name,
+            job_title_id=user.job_title_id,
+            job_title_name=job_title_name,
             allowed_modules=modules,
             created_at=created_at_str
         ))
@@ -204,6 +214,8 @@ def update_user(
         user.is_active = user_data.is_active
     if user_data.organization_id:
         user.organization_id = user_data.organization_id
+    if user_data.job_title_id is not None:
+        user.job_title_id = user_data.job_title_id
     
     db.commit()
     db.refresh(user)
@@ -216,6 +228,25 @@ def update_user(
     
     created_at_str = user.created_at if isinstance(user.created_at, str) else user.created_at.isoformat()
     
+    # Buscar cargo do usuário
+    job_title_name = None
+    if user.job_title_id:
+        job_title = db.query(JobTitle).filter(JobTitle.id == user.job_title_id).first()
+        if job_title:
+            job_title_name = job_title.name
+    
+    # Converter allowed_modules
+    allowed_modules_list = []
+    if user.allowed_modules:
+        if isinstance(user.allowed_modules, str):
+            import json
+            try:
+                allowed_modules_list = json.loads(user.allowed_modules)
+            except:
+                allowed_modules_list = []
+        elif isinstance(user.allowed_modules, list):
+            allowed_modules_list = user.allowed_modules
+    
     return UserResponse(
         id=user.id,
         email=user.email,
@@ -224,6 +255,9 @@ def update_user(
         role=user.role,
         is_active=user.is_active,
         organization_name=org_name,
+        job_title_id=user.job_title_id,
+        job_title_name=job_title_name,
+        allowed_modules=allowed_modules_list,
         created_at=created_at_str
     )
 

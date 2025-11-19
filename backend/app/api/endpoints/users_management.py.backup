@@ -1,255 +1,346 @@
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
-
 from app.core.database import get_db
 from app.models.user import User
 from app.models.organization import Organization
+from app.models.job_title import JobTitle
 from app.core.security import get_current_user, get_password_hash
+from app.services.email_service import EmailService
 from pydantic import BaseModel, EmailStr, Field
 
 router = APIRouter()
 
 class UserCreate(BaseModel):
-    email: EmailStr
-    full_name: str = Field(..., min_length=1, max_length=255)
-    password: str = Field(..., min_length=6)
-    organization_id: UUID
-    role: str = Field(default="user", pattern="^(super_admin|admin|user)$")
-    crm: Optional[str] = None
-    specialty: Optional[str] = None
+    email: str
+    recovery_email: EmailStr
+    full_name: str
+    password: str
+    organization_id: Optional[UUID] = None
+    role: str = "user"
+    job_title_id: Optional[UUID] = None
 
 class UserUpdate(BaseModel):
+    email: Optional[str] = None
+    recovery_email: Optional[EmailStr] = None
     full_name: Optional[str] = None
-    organization_id: Optional[UUID] = None
     role: Optional[str] = None
-    crm: Optional[str] = None
-    specialty: Optional[str] = None
     is_active: Optional[bool] = None
+    organization_id: Optional[UUID] = None
+    job_title_id: Optional[UUID] = None
 
 class UserResponse(BaseModel):
     id: UUID
     email: str
+    recovery_email: str
     full_name: str
-    organization_id: Optional[UUID]
-    organization_name: Optional[str] = None
     role: str
     is_active: bool
-    crm: Optional[str] = None
-    specialty: Optional[str] = None
+    organization_name: Optional[str] = None
+    job_title_id: Optional[UUID] = None
+    job_title_name: Optional[str] = None
+    allowed_modules: Optional[List[str]] = []
     created_at: str
-    
-    class Config:
-        from_attributes = True
 
-@router.get("/", response_model=List[UserResponse])
+@router.get("/users", response_model=List[UserResponse])
 def list_users(
-    skip: int = 0,
-    limit: int = 100,
-    organization_id: Optional[UUID] = None,
-    is_active: Optional[bool] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Listar usuários (super_admin vê todos, admin vê só da sua org)"""
+    """
+    Lista usuários com base no role:
+    - Super Admin: vê TODOS os usuários
+    - Admin: vê apenas usuários da SUA organização
+    """
+    query = db.query(User).filter(User.is_active == True)
     
-    # Verificar permissão
-    if current_user.role not in ['super_admin', 'admin']:
+    if current_user.role == 'super_admin':
+        # Super admin vê todos
+        pass
+    elif current_user.role == 'admin':
+        # Admin vê apenas da sua organização
+        query = query.filter(User.organization_id == current_user.organization_id)
+        # Admin NÃO vê super_admin
+        query = query.filter(User.role != 'super_admin')
+    else:
         raise HTTPException(status_code=403, detail="Sem permissão")
     
-    query = db.query(User)
-    
-    # Super admin vê todos
-    if current_user.role == 'super_admin':
-        if organization_id:
-            query = query.filter(User.organization_id == organization_id)
-    # Admin vê só da própria organização
-    elif current_user.role == 'admin':
-        query = query.filter(User.organization_id == current_user.organization_id)
-    
-    if is_active is not None:
-        query = query.filter(User.is_active == is_active)
-    
-    users = query.offset(skip).limit(limit).all()
+    users = query.all()
     
     result = []
     for user in users:
         org_name = None
         if user.organization_id:
             org = db.query(Organization).filter(Organization.id == user.organization_id).first()
+        
+        # Buscar cargo do usuário
+        job_title = None
+        job_title_name = None
+        if user.job_title_id:
+            job_title = db.query(JobTitle).filter(JobTitle.id == user.job_title_id).first()
+            if job_title:
+                job_title_name = job_title.name
             if org:
                 org_name = org.name
+        
+        created_at_str = user.created_at if isinstance(user.created_at, str) else user.created_at.isoformat()
+        
+        # Converter allowed_modules de PostgreSQL ARRAY para lista Python
+        modules = user.allowed_modules if user.allowed_modules else []
+        if isinstance(modules, str):
+            # Formato PostgreSQL: {a,b,c} -> ['a','b','c']
+            modules = modules.strip('{}').split(',')
+            modules = [m.strip() for m in modules if m.strip()]
         
         result.append(UserResponse(
             id=user.id,
             email=user.email,
+            recovery_email=user.recovery_email,
             full_name=user.full_name,
-            organization_id=user.organization_id,
-            organization_name=org_name,
             role=user.role,
             is_active=user.is_active,
-            crm=user.crm if hasattr(user, 'crm') else None,
-            specialty=user.specialty if hasattr(user, 'specialty') else None,
-            created_at=user.created_at.isoformat()
+            organization_name=org_name,
+            allowed_modules=modules,
+            created_at=created_at_str
         ))
-    
     return result
 
-@router.post("/", response_model=UserResponse)
+@router.post("/users", response_model=UserResponse)
 def create_user(
     user_data: UserCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Criar novo usuário (super_admin ou admin da própria org)"""
-    
-    # Verificar permissão
     if current_user.role not in ['super_admin', 'admin']:
         raise HTTPException(status_code=403, detail="Sem permissão")
     
-    # Admin só pode criar na própria organização
     if current_user.role == 'admin':
-        if user_data.organization_id != current_user.organization_id:
-            raise HTTPException(status_code=403, detail="Admin só pode criar usuários na própria organização")
-        
-        # Admin não pode criar super_admin ou admin
-        if user_data.role in ['super_admin', 'admin']:
-            raise HTTPException(status_code=403, detail="Admin de clínica não pode criar administradores")
+        if user_data.organization_id and user_data.organization_id != current_user.organization_id:
+            raise HTTPException(status_code=403, detail="Admin só pode criar na própria organização")
+        user_data.organization_id = current_user.organization_id
     
-    # Verificar se email já existe
-    existing = db.query(User).filter(User.email == user_data.email).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Email já cadastrado")
+    if db.query(User).filter(User.email == user_data.email, User.is_active == True).first():
+        raise HTTPException(status_code=400, detail="Login já cadastrado")
     
-    # Verificar organização
-    org = db.query(Organization).filter(Organization.id == user_data.organization_id).first()
-    if not org:
-        raise HTTPException(status_code=404, detail="Organização não encontrada")
+    if db.query(User).filter(User.recovery_email == user_data.recovery_email, User.is_active == True).first():
+        raise HTTPException(status_code=400, detail="Email de recuperação já cadastrado")
     
-    # Criar usuário
     new_user = User(
         email=user_data.email,
+        recovery_email=user_data.recovery_email,
         full_name=user_data.full_name,
         hashed_password=get_password_hash(user_data.password),
         organization_id=user_data.organization_id,
         role=user_data.role,
-        is_active=True
+        is_active=True,
+        created_at=datetime.utcnow().isoformat()
     )
-    
-    if hasattr(new_user, 'crm'):
-        new_user.crm = user_data.crm
-    if hasattr(new_user, 'specialty'):
-        new_user.specialty = user_data.specialty
     
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     
+    # Enviar email com credenciais
+    try:
+        email_service = EmailService()
+        email_body = f"""
+        <h2>Bem-vindo ao Sanaris Pro!</h2>
+        <p>Olá <strong>{new_user.full_name}</strong>,</p>
+        <p>Sua conta foi criada com sucesso!</p>
+        <p><strong>Login:</strong> {new_user.email}</p>
+        <p><strong>Senha temporária:</strong> {user_data.password}</p>
+        <p>⚠️ Por favor, altere sua senha no primeiro acesso.</p>
+        <p>Acesse: <a href="http://localhost:3001/login">Sanaris Pro</a></p>
+        """
+        email_service.send_email(
+            to_email=new_user.recovery_email,
+            subject="Bem-vindo ao Sanaris Pro - Suas Credenciais",
+            html_content=email_body
+        )
+    except Exception as e:
+        print(f"❌ Erro ao enviar email: {e}")
+    
+    org_name = None
+    if new_user.organization_id:
+        org = db.query(Organization).filter(Organization.id == new_user.organization_id).first()
+        if org:
+            org_name = org.name
+    
     return UserResponse(
         id=new_user.id,
         email=new_user.email,
+        recovery_email=new_user.recovery_email,
         full_name=new_user.full_name,
-        organization_id=new_user.organization_id,
-        organization_name=org.name,
         role=new_user.role,
         is_active=new_user.is_active,
-        crm=new_user.crm if hasattr(new_user, 'crm') else None,
-        specialty=new_user.specialty if hasattr(new_user, 'specialty') else None,
-        created_at=new_user.created_at.isoformat()
+        organization_name=org_name,
+        created_at=new_user.created_at if isinstance(new_user.created_at, str) else new_user.created_at.isoformat()
     )
 
-@router.get("/statistics/by-organization")
-def get_statistics(
+@router.put("/users/{user_id}", response_model=UserResponse)
+def update_user(
+    user_id: UUID,
+    user_data: UserUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Estatísticas por organização"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
     
-    if current_user.role not in ['super_admin', 'admin']:
+    if current_user.role == 'admin' and user.organization_id != current_user.organization_id:
         raise HTTPException(status_code=403, detail="Sem permissão")
     
-    from sqlalchemy import func
+    if user_data.email and user_data.email != user.email:
+        if db.query(User).filter(User.email == user_data.email, User.id != user_id).first():
+            raise HTTPException(status_code=400, detail="Login já cadastrado")
+        user.email = user_data.email
     
-    # Super admin vê todas
-    if current_user.role == 'super_admin':
-        stats = db.query(
-            Organization.id,
-            Organization.name,
-            Organization.max_users,
-            func.count(User.id).label('current_users')
-        ).outerjoin(
-            User, (User.organization_id == Organization.id) & (User.is_active == True)
-        ).group_by(Organization.id, Organization.name, Organization.max_users).all()
-    # Admin vê só sua org
-    else:
-        stats = db.query(
-            Organization.id,
-            Organization.name,
-            Organization.max_users,
-            func.count(User.id).label('current_users')
-        ).outerjoin(
-            User, (User.organization_id == Organization.id) & (User.is_active == True)
-        ).filter(
-            Organization.id == current_user.organization_id
-        ).group_by(Organization.id, Organization.name, Organization.max_users).all()
+    if user_data.recovery_email and user_data.recovery_email != user.recovery_email:
+        if db.query(User).filter(User.recovery_email == user_data.recovery_email, User.id != user_id).first():
+            raise HTTPException(status_code=400, detail="Email de recuperação já cadastrado")
+        user.recovery_email = user_data.recovery_email
     
-    result = []
-    for org_id, org_name, max_users, current_users in stats:
-        result.append({
-            "organization_id": str(org_id),
-            "organization_name": org_name,
-            "max_users": max_users,
-            "current_users": current_users,
-            "available_slots": max_users - current_users,
-            "usage_percentage": round((current_users / max_users * 100) if max_users > 0 else 0, 2)
-        })
+    if user_data.full_name:
+        user.full_name = user_data.full_name
+    if user_data.role:
+        user.role = user_data.role
+    if user_data.is_active is not None:
+        user.is_active = user_data.is_active
+    if user_data.organization_id:
+        user.organization_id = user_data.organization_id
+    if user_data.job_title_id is not None:
+        user.job_title_id = user_data.job_title_id
     
-    return result
+    db.commit()
+    db.refresh(user)
+    
+    org_name = None
+    if user.organization_id:
+        org = db.query(Organization).filter(Organization.id == user.organization_id).first()
+        if org:
+            org_name = org.name
+    
+    created_at_str = user.created_at if isinstance(user.created_at, str) else user.created_at.isoformat()
+    
+    # Buscar cargo do usuário
+    job_title_name = None
+    if user.job_title_id:
+        job_title = db.query(JobTitle).filter(JobTitle.id == user.job_title_id).first()
+        if job_title:
+            job_title_name = job_title.name
+    
+    # Converter allowed_modules
+    allowed_modules_list = []
+    if user.allowed_modules:
+        if isinstance(user.allowed_modules, str):
+            import json
+            try:
+                allowed_modules_list = json.loads(user.allowed_modules)
+            except:
+                allowed_modules_list = []
+        elif isinstance(user.allowed_modules, list):
+            allowed_modules_list = user.allowed_modules
+    
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        recovery_email=user.recovery_email,
+        full_name=user.full_name,
+        role=user.role,
+        is_active=user.is_active,
+        organization_name=org_name,
+        job_title_id=user.job_title_id,
+        job_title_name=job_title_name,
+        allowed_modules=allowed_modules_list,
+        created_at=created_at_str
+    )
 
-@router.get("/statistics/by-organization")
-def get_statistics_by_organization(
+@router.delete("/users/{user_id}")
+def delete_user(
+    user_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Não pode deletar próprio usuário")
+    
+    if current_user.role == 'admin' and user.organization_id != current_user.organization_id:
+        raise HTTPException(status_code=403, detail="Sem permissão")
+    
+    # Renomear email/recovery_email para liberar para reuso
+    timestamp = datetime.utcnow().isoformat()
+    user.email = f"{user.email}_deleted_{timestamp}"
+    user.recovery_email = f"{user.recovery_email}_deleted_{timestamp}"
+    user.recovery_email = f"{user.recovery_email}_deleted_{timestamp}"
+    user.is_active = False
+    
+    db.commit()
+    
+    return {"message": "Usuário desativado com sucesso"}
+
+
+# ============================================
+# ENDPOINT PARA GERENCIAR MÓDULOS PERMITIDOS
+# ============================================
+
+@router.put("/users/{user_id}/modules")
+def update_user_modules(
+    user_id: UUID,
+    modules_data: dict,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Retorna estatísticas de usuários por organização
+    Atualiza os módulos permitidos para um usuário básico.
+    Apenas admins podem fazer isso.
     """
-    from sqlalchemy import func
+    # Verificar se é admin
+    if current_user.role not in ['admin', 'super_admin']:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas administradores podem gerenciar permissões"
+        )
     
-    # Se for super admin, mostra todas as organizações
-    if current_user.role == 'super_admin':
-        stats = db.query(
-            Organization.name,
-            func.count(User.id).label('user_count')
-        ).join(
-            User, User.organization_id == Organization.id
-        ).group_by(
-            Organization.id, Organization.name
-        ).all()
-        
-        return {
-            "statistics": [
-                {"organization": org[0], "users": org[1]}
-                for org in stats
-            ]
-        }
+    # Buscar usuário
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
     
-    # Se for admin, mostra apenas sua organização
-    elif current_user.role == 'admin':
-        user_count = db.query(User).filter(
-            User.organization_id == current_user.organization_id
-        ).count()
-        
-        org = db.query(Organization).filter(
-            Organization.id == current_user.organization_id
-        ).first()
-        
-        return {
-            "statistics": [
-                {"organization": org.name if org else "Sua Organização", "users": user_count}
-            ]
-        }
+    # Verificar se é usuário básico
+    if user.role != 'user':
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Só é possível gerenciar permissões de usuários básicos"
+        )
     
-    # Usuário comum não tem acesso
-    raise HTTPException(status_code=403, detail="Acesso negado")
+    # Admin só pode gerenciar usuários da sua organização
+    if current_user.role == 'admin' and user.organization_id != current_user.organization_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você só pode gerenciar usuários da sua organização"
+        )
+    
+    # Atualizar módulos permitidos
+    allowed_modules = modules_data.get('allowed_modules', [])
+    
+    # REGRA: Usuários básicos NUNCA podem ter acesso a Financeiro/TISS
+    forbidden_modules = ['financeiro', 'faturamento_tiss']
+    allowed_modules = [m for m in allowed_modules if m not in forbidden_modules]
+    
+    user.allowed_modules = allowed_modules
+    db.commit()
+    db.refresh(user)
+    
+    return {
+        "message": "Módulos atualizados com sucesso",
+        "user_id": str(user.id),
+        "allowed_modules": allowed_modules
+    }

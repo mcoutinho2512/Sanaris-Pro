@@ -277,12 +277,13 @@ export default function UsersPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
+                <label className="block text-sm font-medium mb-1">Usuário (ex: nome.sobrenome)</label>
                 <input
-                  type="email"
+                  type="text"
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  placeholder="nome.sobrenome"
                   className="w-full px-3 py-2 border rounded-lg"
                 />
               </div>
