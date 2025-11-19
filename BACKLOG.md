@@ -19,6 +19,7 @@
 - [x] Assinatura digital
 - [x] Portal CFM
 - [x] Sistema de Cargos/Funções (23 cargos, 6 departamentos)
+- [x] Sistema de Cargos/Funções (23 cargos, 6 departamentos)
 
 ---
 
