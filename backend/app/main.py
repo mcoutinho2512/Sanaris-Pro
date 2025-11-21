@@ -11,6 +11,7 @@ from app.api.endpoints import (
     schedule,
     notifications,
     dashboard,
+    financial,
     job_titles,
     doctor_profile,
     medications,
@@ -190,6 +191,7 @@ async def shutdown_event():
 
 app.include_router(dashboard_stats.router, prefix="/api/v1/statistics", tags=["Dashboard Statistics"])
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["Dashboard"])
+app.include_router(financial.router, prefix="/api/v1/financial", tags=["Financial"])
 
 @app.on_event("startup")
 async def startup_event():
