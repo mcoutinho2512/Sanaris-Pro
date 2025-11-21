@@ -19,3 +19,9 @@ class Organization(Base):
     # Relacionamentos
     users = relationship("User", back_populates="organization")
     patients = relationship("Patient", back_populates="organization")
+    # Relacionamentos TISS
+    tiss_operadoras = relationship("TISSOperadora", back_populates="organization")
+    tiss_lotes = relationship("TISSLote", back_populates="organization")
+    tiss_guias = relationship("TISSGuia", back_populates="organization")
+    tiss_procedimentos = relationship("TISSProcedimento", back_populates="organization")
+    tiss_tabelas_referencia = relationship("TISSTabelaReferencia", back_populates="organization")

@@ -10,7 +10,7 @@ from app.models.notification import Notification
 from app.models.organization import Organization
 from app.models.patient import Patient
 from app.models.prescription import Prescription, PrescriptionItem, PrescriptionTemplate
-from app.models.tiss import HealthInsuranceOperator, TussProcedure, Beneficiary, TissBatch, TissGuide, TissGuideProcedure
+from app.models.tiss import TISSOperadora, TISSLote, TISSGuia, TISSProcedimento, TISSTabelaReferencia
 from app.models.user import User
 
 __all__ = [
@@ -49,12 +49,10 @@ __all__ = [
     "Prescription",
     "PrescriptionItem",
     "PrescriptionTemplate",
-    "HealthInsuranceOperator",
-    "TussProcedure",
-    "Beneficiary",
-    "TissBatch",
-    "TissGuide",
-    "TissGuideProcedure",
+    "TISSOperadora",
+    "TISSLote",
+    "TISSGuia",
+    "TISSProcedimento",
+    "TISSTabelaReferencia",
     "User",
 ]
-

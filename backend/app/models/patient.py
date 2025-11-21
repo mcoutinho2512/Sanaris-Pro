@@ -43,3 +43,5 @@ class Patient(Base):
     
     # Relacionamentos
     organization = relationship("Organization", back_populates="patients")
+    # Relacionamentos TISS
+    tiss_guias = relationship("TISSGuia", back_populates="patient")
