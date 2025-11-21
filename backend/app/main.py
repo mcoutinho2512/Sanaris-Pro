@@ -10,6 +10,7 @@ from app.services.reminder_scheduler import reminder_scheduler
 from app.api.endpoints import (
     schedule,
     notifications,
+    dashboard,
     job_titles,
     doctor_profile,
     medications,
@@ -188,6 +189,7 @@ async def shutdown_event():
     logger.info("⏹️ Scheduler de lembretes parado!")
 
 app.include_router(dashboard_stats.router, prefix="/api/v1/statistics", tags=["Dashboard Statistics"])
+app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["Dashboard"])
 
 @app.on_event("startup")
 async def startup_event():

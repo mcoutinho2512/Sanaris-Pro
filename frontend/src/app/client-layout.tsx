@@ -100,7 +100,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   ];
 
   const allModules: Module[] = [
-    { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard, path: '/' },
+    { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { id: 'pacientes', name: 'Pacientes', icon: UserCircle, path: '/pacientes' },
     { id: 'agenda', name: 'Agenda', icon: Calendar, path: '/agenda' },
     { id: 'prontuarios', name: 'Prontuários', icon: FileText, path: '/prontuarios' },
