@@ -14,7 +14,8 @@ import {
   Eye,
   Edit,
   Trash2,
-  Calendar
+  Calendar,
+  X
 } from 'lucide-react';
 
 interface FinancialSummary {
@@ -41,15 +42,39 @@ interface AccountReceivable {
   status: string;
 }
 
+interface Patient {
+  id: string;
+  full_name: string;
+}
+
 export default function FinanceiroPage() {
   const [summary, setSummary] = useState<FinancialSummary | null>(null);
   const [receivables, setReceivables] = useState<AccountReceivable[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewModal, setShowNewModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [saving, setSaving] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState<AccountReceivable | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
+
+  // Form state
+  const [formData, setFormData] = useState({
+    patient_id: '',
+    description: '',
+    original_amount: '',
+    discount_amount: '0',
+    due_date: '',
+    total_installments: '1',
+    payment_method: '',
+    notes: ''
+  });
 
   useEffect(() => {
     loadData();
+    loadPatients();
   }, [statusFilter]);
 
   const loadData = async () => {
@@ -57,13 +82,11 @@ export default function FinanceiroPage() {
       const token = localStorage.getItem('token');
       const headers = { 'Authorization': `Bearer ${token}` };
 
-      // Carregar resumo
       const summaryRes = await fetch('http://localhost:8888/api/v1/financial/summary', { headers });
       if (summaryRes.ok) {
         setSummary(await summaryRes.json());
       }
 
-      // Carregar contas
       const url = statusFilter 
         ? `http://localhost:8888/api/v1/financial/receivables?status=${statusFilter}`
         : 'http://localhost:8888/api/v1/financial/receivables';
@@ -78,6 +101,129 @@ export default function FinanceiroPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadPatients = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8888/api/v1/patients/?limit=100', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPatients(data);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar pacientes:', error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Validar patient_id
+      if (!formData.patient_id) {
+        alert('❌ Selecione um paciente!');
+        setSaving(false);
+        return;
+      }
+
+      const payload = {
+        ...formData,
+        original_amount: parseFloat(formData.original_amount),
+        discount_amount: parseFloat(formData.discount_amount || '0'),
+        total_installments: parseInt(formData.total_installments),
+        due_date: new Date(formData.due_date).toISOString()
+      };
+
+      const res = await fetch('http://localhost:8888/api/v1/financial/receivables', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        alert('✅ Conta a receber criada com sucesso!');
+        setShowNewModal(false);
+        resetForm();
+        loadData();
+      } else {
+        const error = await res.json();
+        alert('❌ Erro: ' + (error.detail || 'Erro ao criar conta'));
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      alert('❌ Erro ao criar conta a receber');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleViewDetails = (account: AccountReceivable) => {
+    setSelectedAccount(account);
+    setShowDetailsModal(true);
+  };
+
+  const handleRegisterPayment = (account: AccountReceivable) => {
+    setSelectedAccount(account);
+    setPaymentAmount('');
+    setShowPaymentModal(true);
+  };
+
+  const submitPayment = async () => {
+    if (!selectedAccount || !paymentAmount) {
+      alert('❌ Informe o valor do pagamento');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:8888/api/v1/financial/receivables/${selectedAccount.id}/pay`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          account_id: selectedAccount.id,
+          amount: parseFloat(paymentAmount),
+          payment_method: 'cash',
+          payment_date: new Date().toISOString()
+        })
+      });
+
+      if (res.ok) {
+        alert('✅ Pagamento registrado com sucesso!');
+        setShowPaymentModal(false);
+        setSelectedAccount(null);
+        loadData();
+      } else {
+        alert('❌ Erro ao registrar pagamento');
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      alert('❌ Erro ao registrar pagamento');
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      patient_id: '',
+      description: '',
+      original_amount: '',
+      discount_amount: '0',
+      due_date: '',
+      total_installments: '1',
+      payment_method: '',
+      notes: ''
+    });
   };
 
   const formatCurrency = (value: string | number) => {
@@ -124,7 +270,7 @@ export default function FinanceiroPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">💰 Gestão Financeira</h1>
+        <h1 className="text-2xl font-bold">�� Gestão Financeira</h1>
         <button
           onClick={() => setShowNewModal(true)}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -257,12 +403,22 @@ export default function FinanceiroPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex items-center gap-2">
-                        <button className="text-blue-600 hover:text-blue-800">
+                        <button 
+                          onClick={() => handleViewDetails(account)}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="Ver detalhes"
+                        >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button className="text-green-600 hover:text-green-800">
-                          <DollarSign className="w-4 h-4" />
-                        </button>
+                        {account.status !== 'paid' && (
+                          <button 
+                            onClick={() => handleRegisterPayment(account)}
+                            className="text-green-600 hover:text-green-800"
+                            title="Registrar pagamento"
+                          >
+                            <DollarSign className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -273,20 +429,289 @@ export default function FinanceiroPage() {
         </div>
       </div>
 
-      {/* Modal Nova Conta */}
-      {showNewModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Nova Conta a Receber</h2>
-            <p className="text-gray-600 mb-4">
-              Funcionalidade de cadastro será implementada em breve.
-            </p>
+      {/* Modal Detalhes */}
+      {showDetailsModal && selectedAccount && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Detalhes da Conta</h2>
+              <button onClick={() => setShowDetailsModal(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Número da Fatura</p>
+                  <p className="font-semibold">{selectedAccount.invoice_number}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Status</p>
+                  {getStatusBadge(selectedAccount.status)}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-600">Paciente</p>
+                <p className="font-semibold">{selectedAccount.patient_name}</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-600">Descrição</p>
+                <p>{selectedAccount.description}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Valor Total</p>
+                  <p className="font-bold text-lg">{formatCurrency(selectedAccount.total_amount)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Valor Pago</p>
+                  <p className="font-bold text-lg text-green-600">{formatCurrency(selectedAccount.paid_amount)}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Valor Restante</p>
+                  <p className="font-bold text-lg text-yellow-600">{formatCurrency(selectedAccount.remaining_amount)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Vencimento</p>
+                  <p className="font-semibold">{formatDate(selectedAccount.due_date)}</p>
+                </div>
+              </div>
+            </div>
+
             <button
-              onClick={() => setShowNewModal(false)}
-              className="w-full px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+              onClick={() => setShowDetailsModal(false)}
+              className="w-full mt-6 px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
             >
               Fechar
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Pagamento */}
+      {showPaymentModal && selectedAccount && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Registrar Pagamento</h2>
+              <button onClick={() => setShowPaymentModal(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-600">Fatura</p>
+                <p className="font-semibold">{selectedAccount.invoice_number}</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-600">Paciente</p>
+                <p className="font-semibold">{selectedAccount.patient_name}</p>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm">Valor Total:</span>
+                  <span className="font-bold">{formatCurrency(selectedAccount.total_amount)}</span>
+                </div>
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm">Já Pago:</span>
+                  <span className="font-bold text-green-600">{formatCurrency(selectedAccount.paid_amount)}</span>
+                </div>
+                <div className="flex justify-between border-t pt-2">
+                  <span className="font-semibold">Restante:</span>
+                  <span className="font-bold text-yellow-600">{formatCurrency(selectedAccount.remaining_amount)}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Valor do Pagamento *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  placeholder="0.00"
+                  max={parseFloat(selectedAccount.remaining_amount)}
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowPaymentModal(false)}
+                  className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={submitPayment}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                  Registrar Pagamento
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nova Conta */}
+      {showNewModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Nova Conta a Receber</h2>
+                <button
+                  onClick={() => {
+                    setShowNewModal(false);
+                    resetForm();
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Paciente *</label>
+                  <select
+                    required
+                    value={formData.patient_id}
+                    onChange={(e) => setFormData({...formData, patient_id: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  >
+                    <option value="">Selecione um paciente</option>
+                    {patients.map(p => (
+                      <option key={p.id} value={p.id}>{p.full_name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Descrição *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg"
+                    placeholder="Ex: Consulta médica"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Valor Original *</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={formData.original_amount}
+                      onChange={(e) => setFormData({...formData, original_amount: e.target.value})}
+                      className="w-full px-4 py-2 border rounded-lg"
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Desconto</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.discount_amount}
+                      onChange={(e) => setFormData({...formData, discount_amount: e.target.value})}
+                      className="w-full px-4 py-2 border rounded-lg"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Vencimento *</label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.due_date}
+                      onChange={(e) => setFormData({...formData, due_date: e.target.value})}
+                      className="w-full px-4 py-2 border rounded-lg"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Parcelas</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="12"
+                      value={formData.total_installments}
+                      onChange={(e) => setFormData({...formData, total_installments: e.target.value})}
+                      className="w-full px-4 py-2 border rounded-lg"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Método de Pagamento</label>
+                  <select
+                    value={formData.payment_method}
+                    onChange={(e) => setFormData({...formData, payment_method: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="cash">Dinheiro</option>
+                    <option value="credit_card">Cartão de Crédito</option>
+                    <option value="debit_card">Cartão de Débito</option>
+                    <option value="pix">PIX</option>
+                    <option value="bank_slip">Boleto</option>
+                    <option value="transfer">Transferência</option>
+                    <option value="insurance">Convênio</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Observações</label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg"
+                    rows={3}
+                    placeholder="Observações adicionais..."
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNewModal(false);
+                      resetForm();
+                    }}
+                    className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {saving ? 'Salvando...' : 'Criar Conta'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

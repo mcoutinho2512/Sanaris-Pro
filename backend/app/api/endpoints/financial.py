@@ -67,7 +67,6 @@ async def create_receivable(
         status=PaymentStatus.PENDING,
         total_installments=data.total_installments or 1,
         current_installment=1,
-        payment_method=data.payment_method,
         notes=data.notes
     )
     
@@ -96,7 +95,6 @@ async def create_receivable(
         status=receivable.status.value,
         total_installments=receivable.total_installments,
         current_installment=receivable.current_installment,
-        payment_method=receivable.payment_method,
         notes=receivable.notes,
         created_at=receivable.created_at
     )
@@ -159,7 +157,6 @@ async def list_receivables(
             status=r.status.value,
             total_installments=r.total_installments,
             current_installment=r.current_installment,
-            payment_method=r.payment_method,
             notes=r.notes,
             created_at=r.created_at
         ))
@@ -207,7 +204,6 @@ async def get_receivable(
         status=receivable.status.value,
         total_installments=receivable.total_installments,
         current_installment=receivable.current_installment,
-        payment_method=receivable.payment_method,
         notes=receivable.notes,
         created_at=receivable.created_at
     )
