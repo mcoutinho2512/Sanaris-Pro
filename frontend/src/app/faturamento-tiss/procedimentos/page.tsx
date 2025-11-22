@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { tissProcedimentosAPI, tissGuiasAPI } from "@/lib/api/tiss";
+import { tissProcedimentosAPI, tissGuiasAPI, tissTabelasAPI } from "@/lib/api/tiss";
 import { Plus, Edit, Trash2, Stethoscope } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -11,9 +11,15 @@ interface Procedimento {
   codigo_procedimento: string;
   descricao_procedimento: string;
   quantidade_executada: number;
-  valor_unitario: number;
+  valor_unitario_informado: number;
   valor_total: number;
-  data_execucao: string;
+  data_realizacao: string;
+  nome_profissional_executante?: string;
+  conselho_profissional?: string;
+  numero_conselho?: string;
+  uf_conselho?: string;
+  codigo_cbo?: string;
+  grau_participacao?: string;
 }
 
 interface Guia {
@@ -31,11 +37,18 @@ export default function ProcedimentosPage() {
   const [selectedGuiaId, setSelectedGuiaId] = useState<string>("");
   const [formData, setFormData] = useState({
     guia_id: "",
+    tabela: "22",
     codigo_procedimento: "",
     descricao_procedimento: "",
     quantidade_executada: "1",
-    valor_unitario: "",
-    data_execucao: "",
+    valor_unitario_informado: "",
+    data_realizacao: "",
+    nome_profissional_executante: "",
+    conselho_profissional: "",
+    numero_conselho: "",
+    uf_conselho: "",
+    codigo_cbo: "",
+    grau_participacao: "00",
   });
 
   useEffect(() => {
@@ -71,13 +84,32 @@ export default function ProcedimentosPage() {
     }
   };
 
+
+  const buscarTUSS = async (codigo: string) => {
+    if (!codigo || codigo.length < 6) return;
+    
+    try {
+      const response = await tissTabelasAPI.buscarPorCodigo(codigo, "TUSS");
+      if (response.data) {
+        setFormData(prev => ({
+          ...prev,
+          descricao_procedimento: response.data.descricao,
+          valor_unitario_informado: response.data.valor_referencia?.toString() || prev.valor_unitario_informado,
+        }));
+        toast.success("Procedimento encontrado na TUSS!");
+      }
+    } catch (error) {
+      console.log("Procedimento não encontrado na TUSS");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const data = {
       ...formData,
       quantidade_executada: parseInt(formData.quantidade_executada),
-      valor_unitario: parseFloat(formData.valor_unitario),
+      valor_unitario_informado: parseFloat(formData.valor_unitario_informado),
     };
 
     try {
@@ -102,11 +134,18 @@ export default function ProcedimentosPage() {
   const handleEdit = (proc: Procedimento) => {
     setFormData({
       guia_id: proc.guia_id,
+      tabela: "22",
       codigo_procedimento: proc.codigo_procedimento,
       descricao_procedimento: proc.descricao_procedimento,
       quantidade_executada: proc.quantidade_executada.toString(),
-      valor_unitario: proc.valor_unitario.toString(),
-      data_execucao: proc.data_execucao.split("T")[0],
+      valor_unitario_informado: proc.valor_unitario_informado?.toString() || "",
+      data_realizacao: proc.data_realizacao?.split("T")[0] || "",
+      nome_profissional_executante: proc.nome_profissional_executante || "",
+      conselho_profissional: proc.conselho_profissional || "",
+      numero_conselho: proc.numero_conselho || "",
+      uf_conselho: proc.uf_conselho || "",
+      codigo_cbo: proc.codigo_cbo || "",
+      grau_participacao: proc.grau_participacao || "00",
     });
     setEditingId(proc.id);
     setShowModal(true);
@@ -129,17 +168,51 @@ export default function ProcedimentosPage() {
   const resetForm = () => {
     setFormData({
       guia_id: selectedGuiaId,
+      tabela: "22",
       codigo_procedimento: "",
       descricao_procedimento: "",
       quantidade_executada: "1",
-      valor_unitario: "",
-      data_execucao: "",
+      valor_unitario_informado: "",
+      data_realizacao: "",
+      nome_profissional_executante: "",
+      conselho_profissional: "",
+      numero_conselho: "",
+      uf_conselho: "",
+      codigo_cbo: "",
+      grau_participacao: "00",
     });
     setEditingId(null);
   };
 
-  const openNewModal = () => {
+  const openNewModal = async () => {
     resetForm();
+    
+    // Buscar dados completos da guia para copiar informações
+    try {
+      const guiaResponse = await tissGuiasAPI.get(selectedGuiaId);
+      const guia = guiaResponse.data;
+      
+      setFormData(prev => ({
+        ...prev,
+        guia_id: selectedGuiaId,
+        nome_profissional_executante: guia.nome_profissional || '',
+        conselho_profissional: guia.sigla_conselho || '',
+        numero_conselho: guia.numero_conselho_profissional || '',
+        uf_conselho: guia.uf_conselho || '',
+        codigo_cbo: guia.codigo_cbo || '',
+        data_realizacao: guia.data_atendimento || new Date().toISOString().split('T')[0],
+        grau_participacao: '00',
+      }));
+    } catch (error) {
+      // Se não conseguir buscar, só seta o guia_id
+      setFormData(prev => ({ 
+        ...prev, 
+        guia_id: selectedGuiaId,
+        data_realizacao: new Date().toISOString().split('T')[0],
+        grau_participacao: '00',
+      }));
+    }
+    
     setShowModal(true);
   };
 
@@ -252,16 +325,16 @@ export default function ProcedimentosPage() {
                         {new Intl.NumberFormat("pt-BR", {
                           style: "currency",
                           currency: "BRL",
-                        }).format(proc.valor_unitario)}
+                        }).format(proc.valor_unitario_informado || 0)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {new Intl.NumberFormat("pt-BR", {
                           style: "currency",
                           currency: "BRL",
-                        }).format(proc.valor_total)}
+                        }).format(proc.valor_total || (proc.quantidade_executada * (proc.valor_unitario_informado || 0)))}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(proc.data_execucao).toLocaleDateString("pt-BR")}
+                        {new Date(proc.data_realizacao).toLocaleDateString("pt-BR")}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
@@ -319,14 +392,14 @@ export default function ProcedimentosPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Data de Execução *
+                    Data de Realização *
                   </label>
                   <input
                     type="date"
                     required
-                    value={formData.data_execucao}
+                    value={formData.data_realizacao}
                     onChange={(e) =>
-                      setFormData({ ...formData, data_execucao: e.target.value })
+                      setFormData({ ...formData, data_realizacao: e.target.value })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
@@ -375,9 +448,9 @@ export default function ProcedimentosPage() {
                     required
                     step="0.01"
                     min="0"
-                    value={formData.valor_unitario}
+                    value={formData.valor_unitario_informado}
                     onChange={(e) =>
-                      setFormData({ ...formData, valor_unitario: e.target.value })
+                      setFormData({ ...formData, valor_unitario_informado: e.target.value })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     placeholder="0.00"

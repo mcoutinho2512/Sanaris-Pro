@@ -44,7 +44,11 @@ export const tissTabelasAPI = {
   delete: (id: string) => api.delete(`/tiss/tabelas/${id}`),
   importarTuss: () => api.post('/tiss/tabelas/importar-tuss'),
 };
+// ============================================
 
+// ============================================
+// PRESTADORES
+// ============================================
 export const prestadoresAPI = {
   list: (params?: { tipo_prestador?: string; ativo?: boolean }) => 
     api.get("/prestadores/", { params }),
