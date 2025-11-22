@@ -20,6 +20,7 @@ export default function TabelasPage() {
   const [tabelas, setTabelas] = useState<Tabela[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchCodigo, setSearchCodigo] = useState("");
   const [filterTipo, setFilterTipo] = useState("");
@@ -38,6 +39,35 @@ export default function TabelasPage() {
   useEffect(() => {
     loadTabelas();
   }, []);
+
+
+  const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const response = await fetch('http://localhost:8888/api/v1/tiss/tabelas/importar-csv', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: formData,
+      });
+      
+      const data = await response.json();
+      toast.success(`${data.total_importados} procedimentos importados!`);
+      loadTabelas();
+    } catch (error) {
+      toast.error('Erro ao importar CSV');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
 
   const loadTabelas = async () => {
     try {
@@ -159,13 +189,17 @@ export default function TabelasPage() {
           <p className="text-gray-600">TUSS, CBHPM e outras tabelas</p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={handleImportarTUSS}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700"
-          >
+          <label className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 cursor-pointer">
             <Download className="w-5 h-5" />
-            Importar TUSS
-          </button>
+            {uploading ? 'Importando...' : 'Importar TUSS'}
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleImportCSV}
+              className="hidden"
+              disabled={uploading}
+            />
+          </label>
           <button
             onClick={openNewModal}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
