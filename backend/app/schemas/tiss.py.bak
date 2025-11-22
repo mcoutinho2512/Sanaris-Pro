@@ -58,7 +58,7 @@ class TISSOperadoraBase(BaseModel):
     registro_ans: str = Field(..., min_length=6, max_length=6, description="Código ANS")
     razao_social: str = Field(..., max_length=200)
     nome_fantasia: Optional[str] = Field(None, max_length=200)
-    cnpj: str = Field(..., max_length=18)
+    cnpj: str = Field(..., pattern=r'^\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}$')
     telefone: Optional[str] = None
     email: Optional[str] = None
     site: Optional[str] = None
@@ -212,7 +212,7 @@ class TISSGuiaBase(BaseModel):
     numero_cns: Optional[str] = Field(None, min_length=15, max_length=20)
     codigo_prestador_na_operadora: Optional[str] = None
     nome_contratado: str = Field(..., max_length=200)
-    cnpj_contratado: str = Field(..., max_length=18)
+    cnpj_contratado: str = Field(..., pattern=r'^\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}$')
     cnes: Optional[str] = Field(None, max_length=20)
     nome_profissional: Optional[str] = Field(None, max_length=200)
     numero_conselho_profissional: Optional[str] = Field(None, max_length=20)

@@ -1,4 +1,4 @@
-import api from '../api';
+import { api } from '../api';
 
 export const tissOperadorasAPI = {
   list: (params?: any) => api.get('/tiss/operadoras/', { params }),
