@@ -7,7 +7,7 @@ import {
   Building2, Users, LayoutDashboard, LogOut, 
   Menu, X, Settings, Lock, ChevronDown,
   UserCircle, Calendar, FileText, Pill, 
-  Shield, DollarSign, FileBarChart, BarChart3, MessageSquare,
+  Shield, DollarSign, FileBarChart, BarChart3, MessageSquare, UserCheck,
   Stethoscope
 } from 'lucide-react';
 
@@ -108,9 +108,10 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     { id: 'cfm', name: 'CFM', icon: Shield, path: '/cfm' },
     { id: 'financeiro', name: 'Financeiro', icon: DollarSign, path: '/financeiro' },
     { id: 'faturamento_tiss', name: 'Faturamento TISS', icon: FileBarChart, path: '/faturamento-tiss' },
+    { id: 'prestadores', name: 'Prestadores', icon: UserCheck, path: '/prestadores' },
     { id: 'relatorios', name: 'Relatórios', icon: BarChart3, path: '/relatorios' },
     { id: 'configuracoes', name: 'Configurações', icon: Settings, path: '/configuracoes' },
-    { id: 'chat', name: 'Chat', icon: MessageSquare, path: '/chat' },
+    { id: 'chat', name: 'Chat', icon: MessageSquare, UserCheck, path: '/chat' },
     { id: 'meu-perfil', name: 'Meu Perfil', icon: Stethoscope, path: '/meu-perfil' }
   ];
 

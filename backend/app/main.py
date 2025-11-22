@@ -37,7 +37,8 @@ from app.api import (
     tiss_lotes,
     tiss_guias,
     tiss_procedimentos,
-    tiss_tabelas
+    tiss_tabelas,
+    prestadores
 )
 
 logger = logging.getLogger(__name__)
@@ -117,6 +118,7 @@ app.include_router(tiss_operadoras.router, prefix="/api/v1", tags=["TISS"])
 app.include_router(tiss_lotes.router, prefix="/api/v1", tags=["TISS"])
 app.include_router(tiss_guias.router, prefix="/api/v1", tags=["TISS"])
 app.include_router(tiss_procedimentos.router, prefix="/api/v1", tags=["TISS"])
+app.include_router(prestadores.router, prefix="/api/v1/prestadores", tags=["Prestadores"])
 app.include_router(tiss_tabelas.router, prefix="/api/v1", tags=["TISS"])
 
 
