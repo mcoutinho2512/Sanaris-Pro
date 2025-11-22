@@ -1,5 +1,8 @@
 'use client';
 
+import { api } from '@/lib/api';
+import { tissOperadorasAPI } from '@/lib/api/tiss';
+
 import { useState, useEffect } from 'react';
 import { Users, Plus, Search, Phone, Mail, Calendar, ArrowLeft, Edit, Trash2, BarChart3, Filter, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -55,6 +58,8 @@ export default function PacientesPage() {
   const [filterOrg, setFilterOrg] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   
+  const [operadoras, setOperadoras] = useState([]);
+
   const [formData, setFormData] = useState({
     full_name: '',
     cpf: '',
@@ -70,11 +75,18 @@ export default function PacientesPage() {
     blood_type: '',
     allergies: '',
     observations: ''
+    ,
+    numero_carteira: '',
+    validade_carteira: '',
+    operadora_id: '',
+    cns: '',
+    nome_mae: ''
   });
 
   useEffect(() => {
     loadCurrentUser();
     loadPatients();
+    loadOperadoras();
     loadOrganizations();
     loadStatistics();
   }, []);
@@ -96,6 +108,16 @@ export default function PacientesPage() {
       }
     } catch (error) {
       console.error('Erro ao carregar usuário:', error);
+    }
+  };
+
+
+  const loadOperadoras = async () => {
+    try {
+      const response = await tissOperadorasAPI.list();
+      setOperadoras(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar operadoras:', error);
     }
   };
 
@@ -197,6 +219,7 @@ export default function PacientesPage() {
         setShowModal(false);
         resetForm();
         loadPatients();
+    loadOperadoras();
         loadStatistics();
       } else {
         const error = await response.json();
@@ -224,6 +247,12 @@ export default function PacientesPage() {
       blood_type: '',
       allergies: '',
       observations: ''
+    ,
+    numero_carteira: '',
+    validade_carteira: '',
+    operadora_id: '',
+    cns: '',
+    nome_mae: ''
     });
   };
 
@@ -417,7 +446,7 @@ export default function PacientesPage() {
           <div className="bg-white rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold">Novo Paciente</h2>
-              <button onClick={() => setShowNewModal(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -586,6 +615,83 @@ export default function PacientesPage() {
                 </div>
               </div>
 
+
+              {/* SEÇÃO TISS */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 border-t pt-4 mt-4">
+                  <h3 className="text-lg font-semibold mb-4 text-blue-600">📋 Dados do Plano de Saúde (TISS)</h3>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nome da Mãe
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.nome_mae}
+                    onChange={(e) => setFormData({...formData, nome_mae: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                    placeholder="Nome completo da mãe"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    CNS (Cartão Nacional de Saúde)
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={15}
+                    value={formData.cns}
+                    onChange={(e) => setFormData({...formData, cns: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                    placeholder="000000000000000"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Operadora
+                  </label>
+                  <select
+                    value={formData.operadora_id}
+                    onChange={(e) => setFormData({...formData, operadora_id: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                  >
+                    <option value="">Selecione a operadora</option>
+                    {operadoras.map((op: any) => (
+                      <option key={op.id} value={op.id}>
+                        {op.nome_fantasia} - {op.registro_ans}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Número da Carteira
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.numero_carteira}
+                    onChange={(e) => setFormData({...formData, numero_carteira: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                    placeholder="Número da carteira do plano"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Validade da Carteira
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.validade_carteira}
+                    onChange={(e) => setFormData({...formData, validade_carteira: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+              </div>
               <div className="flex gap-2 pt-4">
                 <button
                   type="button"

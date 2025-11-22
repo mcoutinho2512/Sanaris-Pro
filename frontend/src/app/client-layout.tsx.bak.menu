@@ -1,6 +1,4 @@
 'use client';
-import MenuItem from '@/components/MenuItem';
-import { menuStructure, superAdminMenu } from '@/config/menu-structure';
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -93,18 +91,39 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     return <>{children}</>;
   }
 
-  
+  const superAdminModules: Module[] = [
+    { id: 'organizations', name: 'Organizações', icon: Building2, path: '/organizacoes' }
+  ];
 
   const adminModules: Module[] = [
     { id: 'users', name: 'Usuários', icon: Users, path: '/usuarios' }
   ];
 
-  // Menu structure moved to src/config/menu-structure.ts
+  const allModules: Module[] = [
+    { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+    { id: 'pacientes', name: 'Pacientes', icon: UserCircle, path: '/pacientes' },
+    { id: 'agenda', name: 'Agenda', icon: Calendar, path: '/agenda' },
+    { id: 'prontuarios', name: 'Prontuários', icon: FileText, path: '/prontuarios' },
+    { id: 'prescricoes', name: 'Prescrições', icon: Pill, path: '/prescricoes' },
+    { id: 'cfm', name: 'CFM', icon: Shield, path: '/cfm' },
+    { id: 'financeiro', name: 'Financeiro', icon: DollarSign, path: '/financeiro' },
+    { id: 'faturamento_tiss', name: 'Faturamento TISS', icon: FileBarChart, path: '/faturamento-tiss' },
+    { id: 'prestadores', name: 'Prestadores', icon: UserCheck, path: '/prestadores' },
+    { id: 'relatorios', name: 'Relatórios', icon: BarChart3, path: '/relatorios' },
+    { id: 'configuracoes', name: 'Configurações', icon: Settings, path: '/configuracoes' },
+    { id: 'chat', name: 'Chat', icon: MessageSquare, UserCheck, path: '/chat' },
+    { id: 'meu-perfil', name: 'Meu Perfil', icon: Stethoscope, path: '/meu-perfil' }
+  ];
 
-  const visibleModules = userRole === 'super_admin'
-    ? superAdminMenu
-    : menuStructure;
-
+  const visibleModules = userRole === 'super_admin' 
+    ? superAdminModules  // Super admin vê APENAS gestão do sistema
+    : userRole === 'admin'
+    ? [...allModules, ...adminModules]  // Admin vê tudo da clínica + gestão de usuários
+    : allModules.filter(m => 
+        m.id !== 'financeiro' &&  // Usuário básico NUNCA vê financeiro
+        m.id !== 'faturamento_tiss' &&
+        allowedModules.includes(m.id)  // Apenas módulos permitidos
+      );
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -127,9 +146,25 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
         {/* Menu Items */}
         <nav className="flex-1 p-4 space-y-2">
-          {visibleModules.map((item) => (
-              <MenuItem key={item.id} item={item} />
-            ))}
+          {visibleModules.map((module) => {
+            const Icon = module.icon;
+            const isActive = pathname === module.path;
+            
+            return (
+              <Link
+                key={module.id}
+                href={module.path}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  isActive 
+                    ? 'bg-blue-50 text-blue-600' 
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                {isSidebarOpen && <span className="font-medium">{module.name}</span>}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* User Profile with Dropdown */}

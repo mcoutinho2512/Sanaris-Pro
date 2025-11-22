@@ -45,3 +45,17 @@ class Patient(Base):
     organization = relationship("Organization", back_populates="patients")
     # Relacionamentos TISS
     tiss_guias = relationship("TISSGuia", back_populates="patient")
+    # ===== CAMPOS TISS =====
+    # Plano de saúde
+    numero_carteira = Column(String(20), nullable=True, index=True)
+    validade_carteira = Column(Date, nullable=True)
+    operadora_id = Column(UUID(as_uuid=True), ForeignKey("tiss_operadoras.id"), nullable=True)
+    
+    # Cartão Nacional de Saúde
+    cns = Column(String(15), nullable=True, index=True)
+    
+    # Nome da mãe (obrigatório para TISS)
+    nome_mae = Column(String(200), nullable=True)
+    
+    # Relacionamento com operadora
+    operadora = relationship("TISSOperadora", foreign_keys=[operadora_id])

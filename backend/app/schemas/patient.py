@@ -8,6 +8,13 @@ class PatientBase(BaseModel):
     birth_date: Optional[date] = None
     phone: Optional[str] = None
     email: Optional[str] = None
+    
+    # Campos TISS
+    numero_carteira: Optional[str] = None
+    validade_carteira: Optional[date] = None
+    operadora_id: Optional[UUID4] = None
+    cns: Optional[str] = None
+    nome_mae: Optional[str] = None
 
 class PatientCreate(PatientBase):
     tenant_id: UUID4
@@ -19,6 +26,13 @@ class PatientUpdate(BaseModel):
     birth_date: Optional[date] = None
     phone: Optional[str] = None
     email: Optional[str] = None
+    
+    # Campos TISS
+    numero_carteira: Optional[str] = None
+    validade_carteira: Optional[date] = None
+    operadora_id: Optional[UUID4] = None
+    cns: Optional[str] = None
+    nome_mae: Optional[str] = None
     is_active: Optional[bool] = None
 
 class PatientResponse(PatientBase):
