@@ -38,6 +38,7 @@ from app.api import (
     tiss_guias,
     tiss_procedimentos,
     tiss_tabelas,
+    tiss_xml,
     prestadores
 )
 
@@ -120,6 +121,7 @@ app.include_router(tiss_guias.router, prefix="/api/v1", tags=["TISS"])
 app.include_router(tiss_procedimentos.router, prefix="/api/v1", tags=["TISS"])
 app.include_router(prestadores.router, prefix="/api/v1/prestadores", tags=["Prestadores"])
 app.include_router(tiss_tabelas.router, prefix="/api/v1", tags=["TISS"])
+app.include_router(tiss_xml.router, prefix="/api/v1", tags=["TISS"])
 
 
 # Health checks

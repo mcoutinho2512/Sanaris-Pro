@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { tissLotesAPI, tissOperadorasAPI } from "@/lib/api/tiss";
 import { Plus, Edit, Trash2, Package, Lock } from "lucide-react";
+import XMLGenerator from "@/components/tiss/XMLGenerator";
 import { toast } from "react-hot-toast";
 
 interface Lote {
@@ -260,6 +261,13 @@ export default function LotesPage() {
                   <Trash2 className="w-4 h-4" />
                   Excluir
                 </button>
+              </div>
+              <div className="mt-4 pt-4 border-t border-gray-200">
+              <XMLGenerator 
+                loteId={lote.id} 
+                numeroLote={lote.numero_lote}
+                onSuccess={loadLotes}
+              />
               </div>
             </div>
           ))}
