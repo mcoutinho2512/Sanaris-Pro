@@ -168,3 +168,79 @@ async def validar_xml_lote(
     except Exception as e:
         logger.error(f"Erro ao validar lote: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erro na validação: {str(e)}")
+
+@router.get("/relatorios/dashboard")
+async def relatorios_dashboard(
+    data_inicio: str = None,
+    data_fim: str = None,
+    db: Session = Depends(get_db)
+) -> Dict:
+    """
+    Dashboard de relatórios TISS com estatísticas gerais
+    """
+    try:
+        from datetime import datetime
+        
+        # Query base
+        query = db.query(TISSLote)
+        
+        # Filtros de data
+        if data_inicio:
+            query = query.filter(TISSLote.created_at >= datetime.fromisoformat(data_inicio))
+        if data_fim:
+            query = query.filter(TISSLote.created_at <= datetime.fromisoformat(data_fim))
+        
+        lotes = query.all()
+        
+        # Estatísticas gerais
+        total_lotes = len(lotes)
+        total_guias = sum(lote.quantidade_guias or 0 for lote in lotes)
+        valor_total = sum(float(lote.valor_total_informado or 0) for lote in lotes)
+        
+        # Por operadora
+        operadoras_stats = {}
+        for lote in lotes:
+            operadora = db.query(TISSOperadora).filter(
+                TISSOperadora.id == lote.operadora_id
+            ).first()
+            
+            if operadora:
+                op_nome = operadora.razao_social
+                if op_nome not in operadoras_stats:
+                    operadoras_stats[op_nome] = {
+                        "nome": op_nome,
+                        "quantidade_lotes": 0,
+                        "quantidade_guias": 0,
+                        "valor_total": 0
+                    }
+                
+                operadoras_stats[op_nome]["quantidade_lotes"] += 1
+                operadoras_stats[op_nome]["quantidade_guias"] += lote.quantidade_guias or 0
+                operadoras_stats[op_nome]["valor_total"] += float(lote.valor_total_informado or 0)
+        
+        # Por status
+        status_stats = {}
+        for lote in lotes:
+            status = lote.status
+            if status not in status_stats:
+                status_stats[status] = {
+                    "status": status,
+                    "quantidade": 0,
+                    "valor": 0
+                }
+            status_stats[status]["quantidade"] += 1
+            status_stats[status]["valor"] += float(lote.valor_total_informado or 0)
+        
+        return {
+            "resumo": {
+                "total_lotes": total_lotes,
+                "total_guias": total_guias,
+                "valor_total": valor_total
+            },
+            "por_operadora": list(operadoras_stats.values()),
+            "por_status": list(status_stats.values())
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao gerar relatórios: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar relatórios: {str(e)}")

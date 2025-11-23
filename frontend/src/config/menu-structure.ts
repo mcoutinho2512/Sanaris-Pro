@@ -32,6 +32,7 @@ export const menuStructure: MenuItem[] = [
       { id: 'guias', name: 'Guias', icon: FileSpreadsheet, path: '/faturamento-tiss/guias' },
       { id: 'procedimentos', name: 'Procedimentos', icon: ClipboardList, path: '/faturamento-tiss/procedimentos' },
       { id: 'tabelas', name: 'Tabelas', icon: Table, path: '/faturamento-tiss/tabelas' },
+      { id: 'relatorios_tiss', name: 'Relatórios', icon: BarChart3, path: '/faturamento-tiss/relatorios' },
     ]
   },
   { id: 'prestadores', name: 'Prestadores', icon: UserCheck, path: '/prestadores' },
