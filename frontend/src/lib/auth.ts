@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:8888/api/v1';
+const API_URL = '/api/v1';
 
 export interface LoginCredentials {
   email: string;

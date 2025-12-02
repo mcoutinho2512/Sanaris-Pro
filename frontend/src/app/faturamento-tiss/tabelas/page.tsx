@@ -50,7 +50,7 @@ export default function TabelasPage() {
     formData.append('file', file);
     
     try {
-      const response = await fetch('http://localhost:8888/api/v1/tiss/tabelas/importar-csv', {
+      const response = await fetch('/api/v1/tiss/tabelas/importar-csv', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,

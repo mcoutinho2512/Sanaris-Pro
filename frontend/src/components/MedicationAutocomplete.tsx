@@ -58,7 +58,7 @@ export default function MedicationAutocomplete({ value, onChange, placeholder, c
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://localhost:8888/api/v1/medications/search?q=${encodeURIComponent(searchTerm)}`,
+        `/api/v1/medications/search?q=${encodeURIComponent(searchTerm)}`,
         {
           headers: { 'Authorization': `Bearer ${token}` }
         }

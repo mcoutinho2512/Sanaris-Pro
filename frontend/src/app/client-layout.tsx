@@ -52,7 +52,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         }
         console.log('✅ CLIENT-LAYOUT: Token OK, buscando dados do usuário...');
 
-        const meResponse = await fetch('http://localhost:8888/api/v1/auth/me', {
+        const meResponse = await fetch('/api/v1/auth/me', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -65,7 +65,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           console.error('❌ CLIENT-LAYOUT: Erro no /auth/me:', meResponse.status);
         }
 
-        const modulesResponse = await fetch('http://localhost:8888/api/v1/permissions/my-modules', {
+        const modulesResponse = await fetch('/api/v1/permissions/my-modules', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 

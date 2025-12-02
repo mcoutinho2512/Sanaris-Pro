@@ -40,7 +40,7 @@ export default function OrganizationsPage() {
         return;
       }
 
-      const response = await fetch('http://localhost:8888/api/v1/auth/me', {
+      const response = await fetch('/api/v1/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -65,7 +65,7 @@ export default function OrganizationsPage() {
   const loadOrganizations = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/v1/organizations/', {
+      const response = await fetch('/api/v1/organizations/', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -86,8 +86,8 @@ export default function OrganizationsPage() {
     try {
       const token = localStorage.getItem('token');
       const url = editingOrg
-        ? `http://localhost:8888/api/v1/organizations/${editingOrg.id}`
-        : 'http://localhost:8888/api/v1/organizations/';
+        ? `/api/v1/organizations/${editingOrg.id}`
+        : '/api/v1/organizations/';
 
       const response = await fetch(url, {
         method: editingOrg ? 'PUT' : 'POST',

@@ -60,7 +60,7 @@ export default function PrescricoesPage() {
       }
       
       // Pegar ID do usuário atual
-      const meRes = await fetch('http://localhost:8888/api/v1/auth/me', {
+      const meRes = await fetch('/api/v1/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -74,13 +74,13 @@ export default function PrescricoesPage() {
         return;
       }
       
-      const prescriptionsRes = await fetch('http://localhost:8888/api/v1/prescriptions/', {
+      const prescriptionsRes = await fetch('/api/v1/prescriptions/', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const prescriptionsData = await prescriptionsRes.json();
       setPrescriptions(prescriptionsData);
       
-      const patientsRes = await fetch('http://localhost:8888/api/v1/patients/', {
+      const patientsRes = await fetch('/api/v1/patients/', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const patientsData = await patientsRes.json();
@@ -140,7 +140,7 @@ export default function PrescricoesPage() {
 
       console.log('Payload completo:', JSON.stringify(payload, null, 2));
 
-      const response = await fetch('http://localhost:8888/api/v1/prescriptions/', {
+      const response = await fetch('/api/v1/prescriptions/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -176,7 +176,7 @@ export default function PrescricoesPage() {
 
   const handleUpdatePrescription = async () => {
     try {
-      const response = await fetch(`http://localhost:8888/api/v1/prescriptions/${editPrescription.id}`, {
+      const response = await fetch(`/api/v1/prescriptions/${editPrescription.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -202,7 +202,7 @@ export default function PrescricoesPage() {
     if (!confirm('Tem certeza que deseja excluir esta prescrição?')) return;
 
     try {
-      const response = await fetch(`http://localhost:8888/api/v1/prescriptions/${id}`, {
+      const response = await fetch(`/api/v1/prescriptions/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });

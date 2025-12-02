@@ -103,7 +103,7 @@ export default function ChatPage() {
   const loadCurrentUser = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/v1/auth/me', {
+      const response = await fetch('/api/v1/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -121,8 +121,8 @@ export default function ChatPage() {
       
       // Usar endpoint correto baseado no role
       const endpoint = currentUser?.role === 'admin' || currentUser?.role === 'super_admin'
-        ? 'http://localhost:8888/api/v1/users-management/users'
-        : 'http://localhost:8888/api/v1/users/';
+        ? '/api/v1/users-management/users'
+        : '/api/v1/users/';
       
       const response = await fetch(endpoint, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -139,7 +139,7 @@ export default function ChatPage() {
   const loadChannels = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/chat/channels', {
+      const response = await fetch('/api/chat/channels', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -160,7 +160,7 @@ export default function ChatPage() {
   const loadMessages = async (channelId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8888/api/chat/channels/${channelId}/messages`, {
+      const response = await fetch(`/api/chat/channels/${channelId}/messages`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -176,7 +176,7 @@ export default function ChatPage() {
   const loadParticipants = async (channelId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8888/api/chat/channels/${channelId}/participants`, {
+      const response = await fetch(`/api/chat/channels/${channelId}/participants`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -192,7 +192,7 @@ export default function ChatPage() {
   const connectWebSocket = () => {
     if (!currentUser) return;
 
-    const ws = new WebSocket(`ws://localhost:8888/api/chat/ws/${currentUser.id}`);
+    const ws = new WebSocket(`/api/chat/ws/${currentUser.id}`);
     
     ws.onopen = () => {
       if (selectedChannel) {
@@ -222,7 +222,7 @@ export default function ChatPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/files/upload', {
+      const response = await fetch('/api/files/upload', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -269,7 +269,7 @@ export default function ChatPage() {
         payload.file_name = fileData.filename;
       }
       
-      const response = await fetch('http://localhost:8888/api/chat/messages', {
+      const response = await fetch('/api/chat/messages', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -315,7 +315,7 @@ export default function ChatPage() {
         channelType = 'direct';
       }
       
-      const response = await fetch('http://localhost:8888/api/chat/channels', {
+      const response = await fetch('/api/chat/channels', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -355,7 +355,7 @@ export default function ChatPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8888/api/chat/channels/${selectedChannel.id}`, {
+      const response = await fetch(`/api/chat/channels/${selectedChannel.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -376,7 +376,7 @@ export default function ChatPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8888/api/chat/channels/${selectedChannel.id}/participants`, {
+      const response = await fetch(`/api/chat/channels/${selectedChannel.id}/participants`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -400,7 +400,7 @@ export default function ChatPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8888/api/chat/channels/${selectedChannel.id}/participants/${userId}`, {
+      const response = await fetch(`/api/chat/channels/${selectedChannel.id}/participants/${userId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -528,11 +528,11 @@ export default function ChatPage() {
                         isOwnMessage ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-900'
                       }`}>
                         {message.message_type === 'image' && message.file_url && (
-                          <img src={`http://localhost:8888${message.file_url}`} alt={message.file_name} className="max-w-full rounded mb-2" />
+                          <img src={`${message.file_url}`} alt={message.file_name} className="max-w-full rounded mb-2" />
                         )}
                         {message.message_type === 'file' && message.file_url && (
                           <a 
-                            href={`http://localhost:8888${message.file_url}`} 
+                            href={`${message.file_url}`} 
                             target="_blank" 
                             download
                             className={`flex items-center gap-2 p-2 rounded hover:opacity-80 mb-2 ${

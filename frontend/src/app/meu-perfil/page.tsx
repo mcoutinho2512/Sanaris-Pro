@@ -48,7 +48,7 @@ export default function MeuPerfilPage() {
   const loadProfile = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/v1/doctor-profile/me', {
+      const response = await fetch('/api/v1/doctor-profile/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -57,7 +57,7 @@ export default function MeuPerfilPage() {
         setFormData(data);
         setHasProfile(true);
         if (data.logo_url) {
-          setLogoPreview(`http://localhost:8888${data.logo_url}`);
+          setLogoPreview(`${data.logo_url}`);
         }
       } else if (response.status === 404) {
         setHasProfile(false);
@@ -92,7 +92,7 @@ export default function MeuPerfilPage() {
     formDataUpload.append('file', logoFile);
 
     const token = localStorage.getItem('token');
-    const response = await fetch('http://localhost:8888/api/v1/doctor-profile/upload-logo', {
+    const response = await fetch('/api/v1/doctor-profile/upload-logo', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
       body: formDataUpload
@@ -122,7 +122,7 @@ export default function MeuPerfilPage() {
       }
 
       const token = localStorage.getItem('token');
-      const url = 'http://localhost:8888/api/v1/doctor-profile/';
+      const url = '/api/v1/doctor-profile/';
       const method = hasProfile ? 'PUT' : 'POST';
 
       const response = await fetch(url, {

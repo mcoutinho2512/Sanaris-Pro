@@ -115,7 +115,7 @@ export default function AgendaPage() {
   const loadProfessionals = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/v1/users-management/users', {
+      const response = await fetch('/api/v1/users-management/users', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -145,7 +145,7 @@ export default function AgendaPage() {
   const loadPatients = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/v1/patients', {
+      const response = await fetch('/api/v1/patients', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -161,7 +161,7 @@ export default function AgendaPage() {
   const loadAppointments = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/v1/appointments', {
+      const response = await fetch('/api/v1/appointments', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -289,7 +289,7 @@ export default function AgendaPage() {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/v1/patients/', {
+      const response = await fetch('/api/v1/patients/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -338,7 +338,7 @@ export default function AgendaPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/v1/appointments/', {
+      const response = await fetch('/api/v1/appointments/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -388,7 +388,7 @@ export default function AgendaPage() {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/v1/patients/', {
+      const response = await fetch('/api/v1/patients/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -437,7 +437,7 @@ export default function AgendaPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/v1/appointments/', {
+      const response = await fetch('/api/v1/appointments/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -490,7 +490,7 @@ export default function AgendaPage() {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/v1/patients/', {
+      const response = await fetch('/api/v1/patients/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -539,7 +539,7 @@ export default function AgendaPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/v1/appointments/', {
+      const response = await fetch('/api/v1/appointments/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

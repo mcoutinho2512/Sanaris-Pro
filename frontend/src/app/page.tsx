@@ -22,7 +22,7 @@ export default function DashboardPage() {
         return;
       }
 
-      const response = await fetch('http://localhost:8888/api/v1/statistics/dashboard-admin', {
+      const response = await fetch('/api/v1/statistics/dashboard-admin', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       

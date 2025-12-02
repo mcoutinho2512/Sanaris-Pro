@@ -29,7 +29,7 @@ export default function ConfiguracoesPage() {
   const loadCurrentUser = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/v1/auth/me', {
+      const response = await fetch('/api/v1/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -70,7 +70,7 @@ export default function ConfiguracoesPage() {
       formBody.append('old_password', formData.old_password);
       formBody.append('new_password', formData.new_password);
 
-      const response = await fetch('http://localhost:8888/api/v1/auth/change-password', {
+      const response = await fetch('/api/v1/auth/change-password', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

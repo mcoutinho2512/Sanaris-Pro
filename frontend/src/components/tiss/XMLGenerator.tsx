@@ -26,7 +26,7 @@ export default function XMLGenerator({ loteId, numeroLote, onSuccess }: XMLGener
   const validarLote = async () => {
     setValidating(true);
     try {
-      const response = await fetch('http://localhost:8888/api/v1/tiss-xml/validar/' + loteId);
+      const response = await fetch('/api/v1/tiss-xml/validar/' + loteId);
       if (!response.ok) throw new Error('Erro ao validar lote');
       
       const data = await response.json();
@@ -43,7 +43,7 @@ export default function XMLGenerator({ loteId, numeroLote, onSuccess }: XMLGener
   const gerarXML = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8888/api/v1/tiss-xml/download/' + loteId);
+      const response = await fetch('/api/v1/tiss-xml/download/' + loteId);
       
       if (!response.ok) {
         throw new Error('Erro ao gerar XML');

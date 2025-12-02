@@ -52,7 +52,7 @@ export default function UsersPage() {
   const loadUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/v1/users-management/users', {
+      const response = await fetch('/api/v1/users-management/users', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -70,7 +70,7 @@ export default function UsersPage() {
   const loadJobTitles = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/v1/job-titles', {
+      const response = await fetch('/api/v1/job-titles', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -89,8 +89,8 @@ export default function UsersPage() {
     try {
       const token = localStorage.getItem('token');
       const url = editingUser 
-        ? `http://localhost:8888/api/v1/users-management/users/${editingUser.id}`
-        : 'http://localhost:8888/api/v1/users-management/users';
+        ? `/api/v1/users-management/users/${editingUser.id}`
+        : '/api/v1/users-management/users';
       
       const method = editingUser ? 'PUT' : 'POST';
       

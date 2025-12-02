@@ -36,7 +36,7 @@ export default function RelatoriosTISSPage() {
 
   const loadRelatorios = async () => {
     try {
-      const response = await fetch('http://localhost:8888/api/v1/tiss-xml/relatorios/dashboard');
+      const response = await fetch('/api/v1/tiss-xml/relatorios/dashboard');
       const result = await response.json();
       setData(result);
     } catch (error) {

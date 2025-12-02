@@ -82,14 +82,14 @@ export default function FinanceiroPage() {
       const token = localStorage.getItem('token');
       const headers = { 'Authorization': `Bearer ${token}` };
 
-      const summaryRes = await fetch('http://localhost:8888/api/v1/financial/summary', { headers });
+      const summaryRes = await fetch('/api/v1/financial/summary', { headers });
       if (summaryRes.ok) {
         setSummary(await summaryRes.json());
       }
 
       const url = statusFilter 
-        ? `http://localhost:8888/api/v1/financial/receivables?status=${statusFilter}`
-        : 'http://localhost:8888/api/v1/financial/receivables';
+        ? `/api/v1/financial/receivables?status=${statusFilter}`
+        : '/api/v1/financial/receivables';
       
       const receivablesRes = await fetch(url, { headers });
       if (receivablesRes.ok) {
@@ -106,7 +106,7 @@ export default function FinanceiroPage() {
   const loadPatients = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8888/api/v1/patients/?limit=100', {
+      const res = await fetch('/api/v1/patients/?limit=100', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -140,7 +140,7 @@ export default function FinanceiroPage() {
         due_date: new Date(formData.due_date).toISOString()
       };
 
-      const res = await fetch('http://localhost:8888/api/v1/financial/receivables', {
+      const res = await fetch('/api/v1/financial/receivables', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -185,7 +185,7 @@ export default function FinanceiroPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8888/api/v1/financial/receivables/${selectedAccount.id}/pay`, {
+      const res = await fetch(`/api/v1/financial/receivables/${selectedAccount.id}/pay`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

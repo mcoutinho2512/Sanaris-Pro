@@ -41,7 +41,7 @@ export default function PermissoesPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8888/api/v1/users-management/users', {
+      const response = await fetch('/api/v1/users-management/users', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -80,7 +80,7 @@ export default function PermissoesPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8888/api/v1/users-management/users/${selectedUser.id}/modules`, {
+      const response = await fetch(`/api/v1/users-management/users/${selectedUser.id}/modules`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

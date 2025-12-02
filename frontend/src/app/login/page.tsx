@@ -22,7 +22,7 @@ export default function LoginPage() {
       formData.append('username', email);
       formData.append('password', password);
 
-      const response = await fetch('http://localhost:8888/api/v1/auth/login', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -39,7 +39,7 @@ export default function LoginPage() {
         
         // Buscar dados do usuário
         console.log('👤 Buscando dados do usuário...');
-        const userResponse = await fetch('http://localhost:8888/api/v1/auth/me', {
+        const userResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/auth/me`, {
           headers: {
             'Authorization': `Bearer ${data.access_token}`
           }

@@ -49,13 +49,13 @@ export default function ProntuariosPage() {
     try {
       setLoading(true);
       
-      const recordsRes = await fetch('http://localhost:8888/api/v1/medical-records/', {
+      const recordsRes = await fetch('/api/v1/medical-records/', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       const recordsData = await recordsRes.json();
       setRecords(recordsData);
       
-      const patientsRes = await fetch('http://localhost:8888/api/v1/patients/', {
+      const patientsRes = await fetch('/api/v1/patients/', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       const patientsData = await patientsRes.json();
@@ -93,7 +93,7 @@ export default function ProntuariosPage() {
     
     try {
       // Pegar ID do profissional logado
-      const meRes = await fetch('http://localhost:8888/api/v1/auth/me', {
+      const meRes = await fetch('/api/v1/auth/me', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       const userData = await meRes.json();
@@ -104,7 +104,7 @@ export default function ProntuariosPage() {
         healthcare_professional_id: userData.id
       };
       
-      const response = await fetch('http://localhost:8888/api/v1/medical-records/', {
+      const response = await fetch('/api/v1/medical-records/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -136,7 +136,7 @@ export default function ProntuariosPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8888/api/v1/medical-records/${editRecord.id}`, {
+      const response = await fetch(`/api/v1/medical-records/${editRecord.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -163,7 +163,7 @@ export default function ProntuariosPage() {
     if (!confirm('Tem certeza que deseja excluir este prontuário?')) return;
 
     try {
-      const response = await fetch(`http://localhost:8888/api/v1/medical-records/${id}`, {
+      const response = await fetch(`/api/v1/medical-records/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });

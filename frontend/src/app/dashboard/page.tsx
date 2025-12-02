@@ -67,10 +67,10 @@ export default function DashboardPage() {
       const headers = { 'Authorization': `Bearer ${token}` };
 
       const [statsRes, monthRes, statusRes, genderRes] = await Promise.all([
-        fetch('http://localhost:8888/api/v1/dashboard/stats', { headers }),
-        fetch('http://localhost:8888/api/v1/dashboard/appointments/by-month', { headers }),
-        fetch('http://localhost:8888/api/v1/dashboard/appointments/by-status', { headers }),
-        fetch('http://localhost:8888/api/v1/dashboard/patients/by-gender', { headers })
+        fetch('/api/v1/dashboard/stats', { headers }),
+        fetch('/api/v1/dashboard/appointments/by-month', { headers }),
+        fetch('/api/v1/dashboard/appointments/by-status', { headers }),
+        fetch('/api/v1/dashboard/patients/by-gender', { headers })
       ]);
 
       if (statsRes.ok) setStats(await statsRes.json());
