@@ -1,212 +1,139 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
-import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 
-export default function ResetPasswordPage() {
-  const router = useRouter();
+function ResetPasswordForm() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const token = searchParams.get('token');
 
-  const [newPassword, setNewPassword] = useState('');
+  const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(true);
-  const [tokenValid, setTokenValid] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [userEmail, setUserEmail] = useState('');
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     if (!token) {
-      setError('Token não fornecido');
-      setIsVerifying(false);
-      return;
+      setError('Token de recuperação não encontrado. Solicite um novo link.');
     }
-
-    api.get(`/api/v1/auth/verify-reset-token/${token}`)
-      .then(response => {
-        if (response.data.valid) {
-          setTokenValid(true);
-          setUserEmail(response.data.user_email);
-        } else {
-          setError('Token inválido ou expirado');
-        }
-      })
-      .catch(() => {
-        setError('Erro ao verificar token');
-      })
-      .finally(() => {
-        setIsVerifying(false);
-      });
   }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (newPassword.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres');
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
+    if (password !== confirmPassword) {
       setError('As senhas não coincidem');
       return;
     }
 
-    setIsLoading(true);
+    if (password.length < 8) {
+      setError('A senha deve ter pelo menos 8 caracteres');
+      return;
+    }
+
+    setLoading(true);
 
     try {
-      await api.post('/api/v1/auth/reset-password', {
-        token: token!,
-        new_password: newPassword
-      });
-
+      await api.post('/auth/reset-password', { token, new_password: password });
       setSuccess(true);
-      setTimeout(() => {
-        router.push('/login');
-      }, 3000);
-    } catch (error: any) {
-      console.error('Erro:', error);
-      const errorData = error.response?.data;
-      let errorMessage = 'Erro ao redefinir senha';
-      
-      if (errorData?.detail) {
-        if (typeof errorData.detail === 'string') {
-          errorMessage = errorData.detail;
-        } else if (Array.isArray(errorData.detail)) {
-          errorMessage = errorData.detail.map((e: any) => e.msg || e.message).join(', ');
-        }
-      }
-      
-      setError(errorMessage);
+      setTimeout(() => router.push('/login'), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Erro ao redefinir senha');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  if (isVerifying) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Verificando token...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Senha Redefinida!</h2>
-          <p className="text-gray-600 mb-6">
-            Sua senha foi alterada com sucesso. Redirecionando para o login...
-          </p>
-          <Link
-            href="/login"
-            className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
-          >
-            Ir para Login
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (!tokenValid) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">❌</span>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Token Inválido</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <Link
-            href="/forgot-password"
-            className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
-          >
-            Solicitar Novo Link
-          </Link>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 text-center">
+            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Senha Redefinida!</h2>
+            <p className="text-gray-600">Redirecionando para o login...</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <Lock className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-900">Nova Senha</h1>
-          </div>
-          <p className="text-sm text-gray-600">
-            Defina uma nova senha para <strong>{userEmail}</strong>
-          </p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle>Redefinir Senha</CardTitle>
+          <CardDescription>Digite sua nova senha</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                {error}
+              </div>
+            )}
 
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-800">{error}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nova Senha * (mínimo 6 caracteres)
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 pr-12"
-                required
-                minLength={6}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
+            <div className="space-y-2">
+              <Label htmlFor="password">Nova Senha</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Mínimo 8 caracteres"
+                  required
+                  disabled={!token}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Confirmar Nova Senha *
-            </label>
-            <input
-              type={showPassword ? 'text' : 'password'}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              required
-              minLength={6}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Repita a senha"
+                required
+                disabled={!token}
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50"
-          >
-            {isLoading ? 'Redefinindo...' : 'Redefinir Senha'}
-          </button>
-        </form>
-      </div>
+            <Button type="submit" className="w-full" disabled={loading || !token}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Redefinir Senha
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Carregando...</div>}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

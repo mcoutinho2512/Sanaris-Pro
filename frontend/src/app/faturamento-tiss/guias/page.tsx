@@ -23,7 +23,6 @@ export default function GuiasPage() {
     patient_id: '',
     tipo_guia: 'consulta',
     indicacao_clinica: 'C',
-    indicacao_clinica: 'C',
     data_atendimento: '',
     hora_inicial: '',
     hora_final: '',
@@ -94,7 +93,6 @@ export default function GuiasPage() {
       patient_id: '',
       tipo_guia: 'consulta',
     indicacao_clinica: 'C',
-    indicacao_clinica: 'C',
       data_atendimento: '',
       hora_inicial: '',
       hora_final: '',
@@ -118,10 +116,8 @@ export default function GuiasPage() {
       setFormData({
         ...formData,
         patient_id: patientId,
-        nome_beneficiario: paciente.full_name,
-        numero_carteira: paciente.numero_carteira || '',
-        numero_cns: paciente.cns || '',
-        validade_carteira: paciente.validade_carteira || '',
+        nome_beneficiario: (paciente as any).full_name,
+        numero_carteira: (paciente as any).numero_carteira || '',
       });
     }
   };
@@ -131,12 +127,12 @@ export default function GuiasPage() {
     if (prestador) {
       setFormData({
         ...formData,
-        nome_contratado: prestador.nome,
-        cnpj_contratado: prestador.cnpj || prestador.cpf || '',
-        cnes: prestador.cnes || '',
-        nome_profissional: prestador.tipo_prestador === 'medico' ? prestador.nome : '',
-        numero_conselho_profissional: prestador.crm || '',
-        uf_conselho: prestador.uf_crm || '',
+        nome_contratado: (prestador as any).nome,
+        cnpj_contratado: (prestador as any).cnpj || (prestador as any).cpf || '',
+        cnes: (prestador as any).cnes || '',
+        nome_profissional: (prestador as any).tipo_prestador === 'medico' ? (prestador as any).nome : '',
+        numero_conselho_profissional: (prestador as any).crm || '',
+        uf_conselho: (prestador as any).uf_crm || '',
       });
     }
   };

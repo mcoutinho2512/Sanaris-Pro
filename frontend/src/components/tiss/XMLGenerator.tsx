@@ -89,7 +89,7 @@ export default function XMLGenerator({ loteId, numeroLote, onSuccess }: XMLGener
 
         <button
           onClick={gerarXML}
-          disabled={loading || (validation && !validation.pode_gerar)}
+          disabled={!!(loading || (validation && !validation.pode_gerar))}
           className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
         >
           <Download className="w-4 h-4" />

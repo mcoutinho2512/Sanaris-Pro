@@ -18,7 +18,7 @@ export function DashboardPage() {
     try {
       setLoading(true);
       const dashboard = await financialService.getDashboard();
-      setData(dashboard);
+      setData(dashboard as any);
     } catch (error) {
       console.error('Erro ao carregar dashboard:', error);
     } finally {
