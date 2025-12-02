@@ -2,6 +2,7 @@
 Modelos de Prontuário Eletrônico - COMPLETO
 Inclui: MedicalRecord, VitalSigns, MedicalRecordAttachment
 """
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Column, String, DateTime, Boolean, ForeignKey, Text, Integer, Numeric, Date
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -13,10 +14,10 @@ class MedicalRecord(Base):
     """Prontuário Eletrônico - Registro principal"""
     __tablename__ = "medical_records"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    patient_id = Column(String(36), ForeignKey("patients.id"), nullable=False, index=True)
-    appointment_id = Column(String(36), ForeignKey("appointments.id"), index=True)
-    healthcare_professional_id = Column(String(36), nullable=False, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False, index=True)
+    appointment_id = Column(UUID(as_uuid=True), ForeignKey("appointments.id"), index=True)
+    healthcare_professional_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     
     # Data do atendimento
     record_date = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
@@ -87,8 +88,8 @@ class VitalSigns(Base):
     """Sinais Vitais"""
     __tablename__ = "vital_signs"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    medical_record_id = Column(String(36), ForeignKey("medical_records.id"), nullable=False, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    medical_record_id = Column(UUID(as_uuid=True), ForeignKey("medical_records.id"), nullable=False, index=True)
     
     # Data/hora da medição
     measured_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -129,8 +130,8 @@ class MedicalRecordAttachment(Base):
     """Anexos do Prontuário (exames, imagens, documentos)"""
     __tablename__ = "medical_record_attachments"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    medical_record_id = Column(String(36), ForeignKey("medical_records.id"), nullable=False, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    medical_record_id = Column(UUID(as_uuid=True), ForeignKey("medical_records.id"), nullable=False, index=True)
     
     # Informações do arquivo
     file_name = Column(String(255), nullable=False)
@@ -146,7 +147,7 @@ class MedicalRecordAttachment(Base):
     description = Column(Text)
     
     # Metadados
-    uploaded_by = Column(String(36))  # ID do usuário que fez upload
+    uploaded_by = Column(UUID(as_uuid=True))  # ID do usuário que fez upload
     uploaded_at = Column(DateTime, default=datetime.utcnow)
     
     # Timestamps

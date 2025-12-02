@@ -2,6 +2,7 @@
 Sistema de Gestão Financeira
 Contas a Receber
 """
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Column, String, DateTime, Boolean, Text, Numeric, Integer, Enum as SQLEnum, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -46,16 +47,16 @@ class AccountReceivable(Base):
     """Conta a receber principal"""
     __tablename__ = "accounts_receivable"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Identificação
     invoice_number = Column(String(50), unique=True, index=True)  # Número da fatura
     description = Column(Text, nullable=False)  # Descrição do serviço
     
     # Relacionamentos
-    patient_id = Column(String(36), nullable=False, index=True)
-    healthcare_professional_id = Column(String(36), index=True)
-    appointment_id = Column(String(36), index=True)  # Se vier de agendamento
+    patient_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    healthcare_professional_id = Column(UUID(as_uuid=True), index=True)
+    appointment_id = Column(UUID(as_uuid=True), index=True)  # Se vier de agendamento
     
     # Valores
     original_amount = Column(Numeric(10, 2), nullable=False)  # Valor original
@@ -110,10 +111,10 @@ class PaymentInstallment(Base):
     """Parcelas de pagamento"""
     __tablename__ = "payment_installments"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Relacionamento
-    account_receivable_id = Column(String(36), nullable=False, index=True)
+    account_receivable_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     
     # Identificação
     installment_number = Column(Integer, nullable=False)  # Número da parcela
@@ -144,11 +145,11 @@ class PaymentTransaction(Base):
     """Transações de pagamento"""
     __tablename__ = "payment_transactions"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Relacionamentos
-    account_receivable_id = Column(String(36), nullable=False, index=True)
-    installment_id = Column(String(36), index=True)  # Null se pagamento à vista
+    account_receivable_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    installment_id = Column(UUID(as_uuid=True), index=True)  # Null se pagamento à vista
     
     # Identificação
     transaction_number = Column(String(100), unique=True)
@@ -200,7 +201,7 @@ class Supplier(Base):
     """Fornecedores e prestadores de serviço"""
     __tablename__ = "suppliers"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Identificação
     name = Column(String(255), nullable=False)
@@ -252,14 +253,14 @@ class ExpenseCategory(Base):
     """Categorias de despesas"""
     __tablename__ = "expense_categories"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Identificação
     name = Column(String(100), nullable=False, unique=True)
     description = Column(Text)
     
     # Hierarquia
-    parent_id = Column(String(36))  # Categoria pai para subcategorias
+    parent_id = Column(UUID(as_uuid=True))  # Categoria pai para subcategorias
     
     # Configuração
     is_active = Column(Boolean, default=True)
@@ -276,7 +277,7 @@ class CostCenter(Base):
     """Centros de custo"""
     __tablename__ = "cost_centers"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Identificação
     code = Column(String(20), nullable=False, unique=True)
@@ -284,7 +285,7 @@ class CostCenter(Base):
     description = Column(Text)
     
     # Responsável
-    manager_id = Column(String(36))  # ID do profissional responsável
+    manager_id = Column(UUID(as_uuid=True))  # ID do profissional responsável
     
     # Status
     is_active = Column(Boolean, default=True)
@@ -300,18 +301,18 @@ class AccountPayable(Base):
     """Conta a pagar"""
     __tablename__ = "accounts_payable"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Identificação
     bill_number = Column(String(50), unique=True, index=True)  # Número da conta
     description = Column(Text, nullable=False)
     
     # Fornecedor
-    supplier_id = Column(String(36), nullable=False, index=True)
+    supplier_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     
     # Categorização
-    expense_category_id = Column(String(36), nullable=False, index=True)
-    cost_center_id = Column(String(36), index=True)
+    expense_category_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    cost_center_id = Column(UUID(as_uuid=True), index=True)
     
     # Valores
     original_amount = Column(Numeric(10, 2), nullable=False)
@@ -333,7 +334,7 @@ class AccountPayable(Base):
     # Aprovação
     requires_approval = Column(Boolean, default=False)
     is_approved = Column(Boolean, default=False)
-    approved_by = Column(String(36))  # ID do aprovador
+    approved_by = Column(UUID(as_uuid=True))  # ID do aprovador
     approved_at = Column(DateTime)
     approval_notes = Column(Text)
     
@@ -368,10 +369,10 @@ class PayableTransaction(Base):
     """Transações de pagamento de contas a pagar"""
     __tablename__ = "payable_transactions"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Relacionamento
-    account_payable_id = Column(String(36), nullable=False, index=True)
+    account_payable_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     
     # Identificação
     transaction_number = Column(String(100), unique=True)
@@ -421,10 +422,10 @@ class ProfessionalFeeConfiguration(Base):
     """Configuração de repasse por profissional"""
     __tablename__ = "professional_fee_configurations"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Profissional
-    healthcare_professional_id = Column(String(36), nullable=False, unique=True, index=True)
+    healthcare_professional_id = Column(UUID(as_uuid=True), nullable=False, unique=True, index=True)
     
     # Tipo de repasse
     fee_type = Column(SQLEnum(ProfessionalFeeType), nullable=False, default=ProfessionalFeeType.PERCENTAGE)
@@ -467,13 +468,13 @@ class ProfessionalFee(Base):
     """Repasse gerado para profissional"""
     __tablename__ = "professional_fees"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Identificação
     fee_number = Column(String(50), unique=True, index=True)
     
     # Profissional
-    healthcare_professional_id = Column(String(36), nullable=False, index=True)
+    healthcare_professional_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     
     # Período
     reference_month = Column(Integer, nullable=False)  # 1-12
@@ -523,14 +524,14 @@ class ProfessionalFeeItem(Base):
     """Itens do repasse (detalhamento por atendimento)"""
     __tablename__ = "professional_fee_items"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Relacionamento
-    professional_fee_id = Column(String(36), nullable=False, index=True)
+    professional_fee_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     
     # Referência
-    account_receivable_id = Column(String(36), index=True)  # Conta que gerou o repasse
-    appointment_id = Column(String(36), index=True)  # Atendimento relacionado
+    account_receivable_id = Column(UUID(as_uuid=True), index=True)  # Conta que gerou o repasse
+    appointment_id = Column(UUID(as_uuid=True), index=True)  # Atendimento relacionado
     
     # Descrição
     description = Column(Text)

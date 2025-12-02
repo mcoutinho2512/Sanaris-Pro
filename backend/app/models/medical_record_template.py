@@ -1,6 +1,7 @@
 """
 Templates de Prontuário por Especialidade
 """
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Column, String, DateTime, Boolean, Text, Integer
 from datetime import datetime
 from app.core.database import Base
@@ -11,7 +12,7 @@ class MedicalRecordTemplate(Base):
     """Template de prontuário por especialidade"""
     __tablename__ = "medical_record_templates"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Identificação
     name = Column(String(255), nullable=False)
@@ -50,9 +51,9 @@ class ExamResult(Base):
     """Resultado de exame do paciente"""
     __tablename__ = "exam_results"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    patient_id = Column(String(36), nullable=False, index=True)
-    medical_record_id = Column(String(36), index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    patient_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    medical_record_id = Column(UUID(as_uuid=True), index=True)
     
     # Informações do exame
     exam_type = Column(String(100), nullable=False)
@@ -88,9 +89,9 @@ class PhotoEvolution(Base):
     """Evolução fotográfica do paciente"""
     __tablename__ = "photo_evolutions"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    patient_id = Column(String(36), nullable=False, index=True)
-    medical_record_id = Column(String(36), index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    patient_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    medical_record_id = Column(UUID(as_uuid=True), index=True)
     
     # Informações da foto
     title = Column(String(255), nullable=False)

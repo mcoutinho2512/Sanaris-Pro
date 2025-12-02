@@ -2,6 +2,7 @@
 Modelos de Prescrição Digital - COMPLETO
 Inclui: Prescription, PrescriptionItem, PrescriptionTemplate
 """
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Column, String, DateTime, Boolean, ForeignKey, Text, Integer, Numeric
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -13,10 +14,10 @@ class Prescription(Base):
     """Prescrição Digital - Documento principal"""
     __tablename__ = "prescriptions"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    patient_id = Column(String(36), ForeignKey("patients.id"), nullable=False, index=True)
-    medical_record_id = Column(String(36), ForeignKey("medical_records.id"), index=True)
-    healthcare_professional_id = Column(String(36), nullable=False, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False, index=True)
+    medical_record_id = Column(UUID(as_uuid=True), ForeignKey("medical_records.id"), index=True)
+    healthcare_professional_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     
     # Data da prescrição
     prescription_date = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
@@ -67,8 +68,8 @@ class PrescriptionItem(Base):
     """Item da Prescrição - Medicamento individual"""
     __tablename__ = "prescription_items"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    prescription_id = Column(String(36), ForeignKey("prescriptions.id"), nullable=False, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    prescription_id = Column(UUID(as_uuid=True), ForeignKey("prescriptions.id"), nullable=False, index=True)
     
     # Medicamento
     medication_name = Column(String(255), nullable=False)  # Nome comercial ou genérico
@@ -110,8 +111,8 @@ class PrescriptionTemplate(Base):
     """Modelo de Prescrição - Templates prontos e customizáveis"""
     __tablename__ = "prescription_templates"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    healthcare_professional_id = Column(String(36), nullable=False, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    healthcare_professional_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     
     # Informações do template
     template_name = Column(String(255), nullable=False)  # Ex: "Tratamento Hipertensão", "Resfriado Comum"

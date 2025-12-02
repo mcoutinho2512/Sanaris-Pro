@@ -2,6 +2,7 @@
 Integração com prescricao.cfm.org.br
 Sistema Oficial de Prescrição Eletrônica do CFM
 """
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Column, String, DateTime, Boolean, Text, Integer
 from datetime import datetime
 from app.core.database import Base
@@ -12,10 +13,10 @@ class CFMCredentials(Base):
     """Credenciais de acesso ao sistema CFM do médico"""
     __tablename__ = "cfm_credentials"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Identificação do profissional
-    healthcare_professional_id = Column(String(36), nullable=False, unique=True, index=True)
+    healthcare_professional_id = Column(UUID(as_uuid=True), nullable=False, unique=True, index=True)
     
     # Dados CFM
     crm_number = Column(String(20), nullable=False)
@@ -54,11 +55,11 @@ class CFMPrescriptionLog(Base):
     """Log de prescrições enviadas ao CFM"""
     __tablename__ = "cfm_prescription_logs"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Referências
-    prescription_id = Column(String(36), nullable=False, index=True)
-    cfm_credentials_id = Column(String(36), nullable=False, index=True)
+    prescription_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    cfm_credentials_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     
     # Dados do CFM
     cfm_prescription_id = Column(String(100))  # ID no sistema CFM

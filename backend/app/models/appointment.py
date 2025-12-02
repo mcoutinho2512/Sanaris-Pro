@@ -3,6 +3,7 @@ Modelos de Agendamento - COMPLETO (com UUID)
 Inclui: Appointment, AppointmentWaitlist, ProfessionalSchedule
 """
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Text, Numeric
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
@@ -48,9 +49,9 @@ class Appointment(Base):
     """Agendamento de consulta"""
     __tablename__ = "appointments"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    patient_id = Column(String(36), ForeignKey("patients.id"), nullable=False, index=True)
-    healthcare_professional_id = Column(String(36), nullable=False, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False, index=True)
+    healthcare_professional_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     
     # Agendamento
     scheduled_date = Column(DateTime, nullable=False, index=True)
@@ -107,9 +108,9 @@ class AppointmentWaitlist(Base):
     """Lista de espera para agendamentos"""
     __tablename__ = "appointment_waitlist"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    patient_id = Column(String(36), ForeignKey("patients.id"), nullable=False, index=True)
-    healthcare_professional_id = Column(String(36), index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False, index=True)
+    healthcare_professional_id = Column(UUID(as_uuid=True), index=True)
     
     # Preferências
     preferred_date = Column(DateTime)
@@ -145,8 +146,8 @@ class ProfessionalSchedule(Base):
     """Escala/Horários de trabalho dos profissionais"""
     __tablename__ = "professional_schedules"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    healthcare_professional_id = Column(String(36), nullable=False, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    healthcare_professional_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     
     # Dia da semana (0 = Segunda, 6 = Domingo)
     day_of_week = Column(Integer, nullable=False)

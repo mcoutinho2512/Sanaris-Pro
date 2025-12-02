@@ -1,6 +1,7 @@
 """
 Modelos de Documentos e Termos
 """
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Column, String, DateTime, Boolean, ForeignKey, Text, Integer
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -12,7 +13,7 @@ class DocumentTemplate(Base):
     """Template de documento/termo"""
     __tablename__ = "document_templates"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Informações do template
     name = Column(String(255), nullable=False)
@@ -47,10 +48,10 @@ class PatientDocument(Base):
     """Documento gerado para paciente"""
     __tablename__ = "patient_documents"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    patient_id = Column(String(36), ForeignKey("patients.id"), nullable=False, index=True)
-    appointment_id = Column(String(36), ForeignKey("appointments.id"), index=True)
-    template_id = Column(String(36), ForeignKey("document_templates.id"), index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False, index=True)
+    appointment_id = Column(UUID(as_uuid=True), ForeignKey("appointments.id"), index=True)
+    template_id = Column(UUID(as_uuid=True), ForeignKey("document_templates.id"), index=True)
     
     # Informações do documento
     document_type = Column(String(50), nullable=False)
@@ -94,7 +95,7 @@ class QuickPatientRegistration(Base):
     """Pré-cadastro rápido de paciente no agendamento"""
     __tablename__ = "quick_patient_registrations"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Dados básicos obrigatórios
     full_name = Column(String(255), nullable=False)
@@ -107,12 +108,12 @@ class QuickPatientRegistration(Base):
     
     # Status
     is_converted = Column(Boolean, default=False)  # Se virou paciente completo
-    patient_id = Column(String(36), ForeignKey("patients.id"))  # ID do paciente completo
+    patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id"))  # ID do paciente completo
     converted_at = Column(DateTime)
     
     # Origem
     created_by = Column(String(255))  # Quem cadastrou
-    appointment_id = Column(String(36), ForeignKey("appointments.id"))
+    appointment_id = Column(UUID(as_uuid=True), ForeignKey("appointments.id"))
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)

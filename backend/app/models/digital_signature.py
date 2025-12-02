@@ -2,6 +2,7 @@
 Sistema de Assinatura Digital Avançada
 ICP-Brasil e OTP
 """
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Column, String, DateTime, Boolean, Text, Integer, Enum as SQLEnum
 from datetime import datetime
 from app.core.database import Base
@@ -28,10 +29,10 @@ class DigitalCertificate(Base):
     """Certificado Digital ICP-Brasil do profissional"""
     __tablename__ = "digital_certificates"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Profissional
-    healthcare_professional_id = Column(String(36), nullable=False, index=True)
+    healthcare_professional_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     
     # Dados do certificado
     certificate_type = Column(String(50), nullable=False)  # A1, A3, etc
@@ -72,10 +73,10 @@ class OTPConfiguration(Base):
     """Configuração de OTP do profissional"""
     __tablename__ = "otp_configurations"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Profissional
-    healthcare_professional_id = Column(String(36), nullable=False, unique=True, index=True)
+    healthcare_professional_id = Column(UUID(as_uuid=True), nullable=False, unique=True, index=True)
     
     # Configurações OTP
     secret_key_encrypted = Column(Text, nullable=False)  # Chave secreta criptografada
@@ -108,12 +109,12 @@ class SignatureLog(Base):
     """Log de assinaturas digitais"""
     __tablename__ = "signature_logs"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Referências
     document_type = Column(String(50), nullable=False)  # prescription, medical_record, etc
-    document_id = Column(String(36), nullable=False, index=True)
-    healthcare_professional_id = Column(String(36), nullable=False, index=True)
+    document_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    healthcare_professional_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     
     # Tipo de assinatura
     signature_type = Column(SQLEnum(SignatureType), nullable=False)
@@ -123,7 +124,7 @@ class SignatureLog(Base):
     signature_hash = Column(String(255))  # Hash SHA-256
     
     # Certificado (se ICP-Brasil)
-    certificate_id = Column(String(36))
+    certificate_id = Column(UUID(as_uuid=True))
     certificate_serial = Column(String(100))
     
     # OTP (se OTP)
